@@ -1,97 +1,145 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Pehra — React Native MVP
 
-# Getting Started
+Pehra is a lightweight sample React Native app with one mobile application for three roles:
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+- Admin: creates Dealer/Agent accounts and has full mobile access.
+- Dealer: adds, edits and deletes vehicle records.
+- Agent: searches by Vehicle Number, Chassis Number or Engine Number only.
+- When an Agent finds a vehicle marked `WANTED`, the Dealer who created it receives an FCM push alert.
 
-## Step 1: Start Metro
+This starter intentionally excludes the heavier features from the larger reference document:
+OCR, payment/installment tracking, investigations, location tracking, live maps, offline sync, CNIC documents, PDF verification sheets, and web admin.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 1. Create the React Native shell
 
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```bash
+npx @react-native-community/cli@latest init Pehra
+cd Pehra
 ```
 
-## Step 2: Build and run your app
+Copy the contents of the `mobile-overlay` folder in this starter over the generated React Native project.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 2. Install mobile packages
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```bash
+npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
+npm install react-native-screens react-native-safe-area-context
+npm install axios @react-native-async-storage/async-storage
+npm install react-native-vector-icons
+npm install react-native-push-notification socket.io-client
+npx pod-install ios
 ```
 
-### iOS
+## 3. Firebase mobile setup
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Android:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+1. Create a Firebase project.
+2. Add Android app with your package name.
+3. Download `google-services.json`.
+4. Put it in `android/app/google-services.json`.
+5. Configure `react-native-push-notification` for Android 13 notification permission and FCM.
 
-```sh
-bundle install
+iOS:
+
+1. Add an iOS app in Firebase.
+2. Download `GoogleService-Info.plist`.
+3. Add it to the Xcode project target.
+4. Enable Push Notifications and Background Modes > Remote notifications.
+5. Run `npx pod-install ios`.
+
+## 4. Backend
+
+```bash
+cd backend
+cp .env.example .env
+npm install
+npm run seed:admin
+npm run dev
 ```
 
-Then, and every time you update your native dependencies, run:
+MongoDB may be local or MongoDB Atlas.
 
-```sh
-bundle exec pod install
+### Example local backend URL
+
+Android emulator:
+`http://10.0.2.2:5000/api`
+
+iOS simulator:
+`http://localhost:5000/api`
+
+Physical phone:
+Use your Mac/PC LAN IP, for example `http://192.168.1.10:5000/api`.
+
+Set the mobile URL in:
+`src/api/client.js`
+
+Set the backend FCM HTTP v1 credentials in `backend/.env`. The service account needs
+permission to send Firebase Cloud Messaging messages. The backend uses the raw FCM
+HTTP v1 API; the mobile app does not install the Firebase JavaScript SDK. Native
+Android/iOS push services are still required to receive background messages.
+
+Foreground dealer sessions use Socket.IO. When the dealer socket is not connected,
+the backend falls back to FCM. The dealer token is registered automatically after login.
+
+## 5. Seed Admin
+
+Set these in `backend/.env`:
+
+```env
+SEED_ADMIN_NAME=Pehra Admin
+SEED_ADMIN_EMAIL=admin@pehra.local
+SEED_ADMIN_PASSWORD=Admin123!
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Then:
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+```bash
+npm run seed:admin
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 6. Run
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+Backend:
 
-## Step 3: Modify your app
+```bash
+cd backend
+npm run dev
+```
 
-Now that you have successfully run the app, let's make changes!
+Android:
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+```bash
+npx react-native run-android
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+iOS:
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+```bash
+npx react-native run-ios
+```
 
-## Congratulations! :tada:
+## MVP test flow
 
-You've successfully run and modified your React Native App. :partying_face:
+1. Login as seeded Admin.
+2. Create one Dealer and one Agent.
+3. Logout and login as Dealer.
+4. Add a vehicle and set its status to `WANTED`.
+5. Logout and login as Agent.
+6. Search that vehicle by vehicle/chassis/engine number.
+7. The search result should be red/WANTED.
+8. Backend creates an alert and attempts FCM push to the Dealer.
+9. Login as Dealer and open Alerts to see the stored alert even if Firebase is not configured yet.
 
-### Now what?
+## Security notes
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+This is an MVP starter, not a production security certification. Before production:
 
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- move secrets to a proper secret manager,
+- add rate limiting,
+- add audit retention rules,
+- validate all fields more strictly,
+- add refresh tokens / session revocation,
+- configure HTTPS only,
+- review privacy requirements for vehicle and user data,
+- do not store Firebase private keys in Git.

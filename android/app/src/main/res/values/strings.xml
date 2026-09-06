@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Pehra</string>
+    <string name="pehra_alerts_channel">pehra-alerts</string>
 </resources>

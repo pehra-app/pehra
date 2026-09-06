@@ -1,0 +1,23 @@
+# Local environment and secrets
+.env
+.env.*
+.env.example
+firebase-service-account*.json
+service-account*.json
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+
+# Runtime output
+logs/
+*.log
+pids/
+*.pid
+
+# Test and coverage output
+coverage/
+
+# Local OS files
+.DS_Store

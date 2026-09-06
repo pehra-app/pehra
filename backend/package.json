@@ -1,0 +1,27 @@
+{
+  "name": "pehra-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed:admin": "node src/scripts/seedAdmin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "google-auth-library": "latest",
+    "axios": "latest",
+    "helmet": "latest",
+    "jsonwebtoken": "latest",
+    "mongoose": "latest",
+    "morgan": "latest",
+    "socket.io": "latest"
+  },
+  "devDependencies": {
+    "nodemon": "latest"
+  }
+}

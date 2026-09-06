@@ -32,6 +32,7 @@ local.properties
 *.hprof
 .cxx/
 *.keystore
+google-services.json
 !debug.keystore
 .kotlin/
 
@@ -40,6 +41,8 @@ local.properties
 node_modules/
 npm-debug.log
 yarn-error.log
+.env
+backend/src/config/firebase-service-account.json
 
 # fastlane
 #
