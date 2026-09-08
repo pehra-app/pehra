@@ -9,13 +9,16 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
+import { SkeletonList } from '../../components/Skeleton';
 import api from '../../api/client';
 import { colors } from '../../theme/colors';
 
 export default function AlertsScreen() {
   const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
       const { data } = await api.get('/alerts');
       setAlerts(data);
@@ -24,6 +27,8 @@ export default function AlertsScreen() {
         'Error',
         e.response?.data?.message || 'Could not load alerts.',
       );
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -81,7 +86,13 @@ export default function AlertsScreen() {
             </Pressable>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No alerts yet.</Text>}
+        ListEmptyComponent={
+          loading ? (
+            <SkeletonList count={3} />
+          ) : (
+            <Text style={styles.empty}>No alerts yet.</Text>
+          )
+        }
       />
     </Screen>
   );

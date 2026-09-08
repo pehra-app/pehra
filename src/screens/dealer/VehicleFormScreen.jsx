@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Screen from '../../components/Screen';
 import AppInput from '../../components/AppInput';
 import AppButton from '../../components/AppButton';
+import Skeleton from '../../components/Skeleton';
 import api from '../../api/client';
 import { colors } from '../../theme/colors';
 
@@ -23,6 +24,7 @@ export default function VehicleFormScreen({ route, navigation }) {
   const vehicleId = route.params?.vehicleId;
   const [form, setForm] = useState(empty);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(Boolean(vehicleId));
   const [customerBlocked, setCustomerBlocked] = useState(false);
   const set = (key, value) => setForm(v => ({ ...v, [key]: value }));
 
@@ -44,7 +46,8 @@ export default function VehicleFormScreen({ route, navigation }) {
             status: data.status || 'CLEAR',
           });
         })
-        .catch(() => Alert.alert('Error', 'Could not load vehicle.'));
+        .catch(() => Alert.alert('Error', 'Could not load vehicle.'))
+        .finally(() => setInitialLoading(false));
     }
   }, [vehicleId]);
 
@@ -107,6 +110,20 @@ export default function VehicleFormScreen({ route, navigation }) {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <Screen contentStyle={{ gap: 13 }}>
+        <Skeleton width="45%" height={27} />
+        <Skeleton height={72} />
+        <Skeleton height={72} />
+        <Skeleton height={72} />
+        <Skeleton height={72} />
+        <Skeleton height={72} />
+        <Skeleton height={50} radius={14} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen contentStyle={{ gap: 13 }}>

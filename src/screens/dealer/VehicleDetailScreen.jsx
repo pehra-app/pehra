@@ -1,32 +1,44 @@
-import React, {useCallback, useState} from 'react';
-import {Alert, StyleSheet, Text, View} from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
 import AppButton from '../../components/AppButton';
+import Skeleton from '../../components/Skeleton';
 import StatusBadge from '../../components/StatusBadge';
 import api from '../../api/client';
-import {useAuth} from '../../context/AuthContext';
-import {colors} from '../../theme/colors';
+import { useAuth } from '../../context/AuthContext';
+import { colors } from '../../theme/colors';
 
-export default function VehicleDetailScreen({route, navigation}) {
-  const {user} = useAuth();
-  const {vehicleId} = route.params;
+export default function VehicleDetailScreen({ route, navigation }) {
+  const { user } = useAuth();
+  const { vehicleId } = route.params;
   const [vehicle, setVehicle] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const {data} = await api.get(`/vehicles/${vehicleId}`);
+      const { data } = await api.get(`/vehicles/${vehicleId}`);
       setVehicle(data);
     } catch (e) {
-      Alert.alert('Error', e.response?.data?.message || 'Could not load vehicle.');
+      Alert.alert(
+        'Error',
+        e.response?.data?.message || 'Could not load vehicle.',
+      );
+    } finally {
+      setLoading(false);
     }
   }, [vehicleId]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const remove = () => {
     Alert.alert('Delete vehicle?', 'This cannot be undone.', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
@@ -35,23 +47,38 @@ export default function VehicleDetailScreen({route, navigation}) {
             await api.delete(`/vehicles/${vehicleId}`);
             navigation.goBack();
           } catch (e) {
-            Alert.alert('Error', e.response?.data?.message || 'Could not delete vehicle.');
+            Alert.alert(
+              'Error',
+              e.response?.data?.message || 'Could not delete vehicle.',
+            );
           }
         },
       },
     ]);
   };
 
-  if (!vehicle) return <Screen><Text>Loading...</Text></Screen>;
+  if (loading && !vehicle) {
+    return (
+      <Screen contentStyle={{ gap: 16 }}>
+        <Skeleton height={86} radius={18} />
+        <Skeleton height={220} radius={18} />
+        <Skeleton height={50} radius={14} />
+      </Screen>
+    );
+  }
+
+  if (!vehicle) return null;
 
   const canManage = user.role === 'ADMIN' || user.role === 'DEALER';
 
   return (
-    <Screen contentStyle={{gap: 16}}>
+    <Screen contentStyle={{ gap: 16 }}>
       <View style={styles.hero}>
-        <View style={{flex: 1}}>
+        <View style={{ flex: 1 }}>
           <Text style={styles.number}>{vehicle.vehicleNumber}</Text>
-          <Text style={styles.meta}>{vehicle.make || 'Vehicle'} {vehicle.model || ''}</Text>
+          <Text style={styles.meta}>
+            {vehicle.make || 'Vehicle'} {vehicle.model || ''}
+          </Text>
         </View>
         <StatusBadge status={vehicle.status} />
       </View>
@@ -64,7 +91,10 @@ export default function VehicleDetailScreen({route, navigation}) {
       </View>
       {canManage && (
         <>
-          <AppButton title="Edit Vehicle" onPress={() => navigation.navigate('VehicleForm', {vehicleId})} />
+          <AppButton
+            title="Edit Vehicle"
+            onPress={() => navigation.navigate('VehicleForm', { vehicleId })}
+          />
           <AppButton title="Delete Vehicle" onPress={remove} variant="danger" />
         </>
       )}
@@ -72,16 +102,38 @@ export default function VehicleDetailScreen({route, navigation}) {
   );
 }
 
-function Row({label, value}) {
-  return <View style={styles.row}><Text style={styles.label}>{label}</Text><Text style={styles.value}>{String(value)}</Text></View>;
+function Row({ label, value }) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{String(value)}</Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  hero: {backgroundColor: '#fff', padding: 18, borderRadius: 18, borderWidth: 1, borderColor: colors.border, flexDirection: 'row'},
-  number: {fontSize: 23, fontWeight: '900', color: colors.text},
-  meta: {color: colors.muted, marginTop: 4},
-  card: {backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16},
-  row: {paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border},
-  label: {fontSize: 12, color: colors.muted},
-  value: {fontWeight: '700', color: colors.text, marginTop: 4},
+  hero: {
+    backgroundColor: '#fff',
+    padding: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+  },
+  number: { fontSize: 23, fontWeight: '900', color: colors.text },
+  meta: { color: colors.muted, marginTop: 4 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+  },
+  row: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  label: { fontSize: 12, color: colors.muted },
+  value: { fontWeight: '700', color: colors.text, marginTop: 4 },
 });
