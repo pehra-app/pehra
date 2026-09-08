@@ -63,7 +63,9 @@ MongoDB may be local or MongoDB Atlas.
 ### Deploy backend to Railway
 
 1. Create a new Railway project and deploy this repository.
-2. Set the service Root Directory to `/backend`.
+2. Set the service Root Directory to `/backend`. If you leave the Root Directory
+   at `/`, the repository-root `railway.json` still builds and starts only the
+   backend.
 3. Add the variables below in the Railway service Variables tab. Do not upload
    `.env` or the Firebase service-account file.
 
