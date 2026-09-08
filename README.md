@@ -60,6 +60,27 @@ npm run dev
 
 MongoDB may be local or MongoDB Atlas.
 
+### Deploy backend to Railway
+
+1. Create a new Railway project and deploy this repository.
+2. Set the service Root Directory to `/backend`.
+3. Add the variables below in the Railway service Variables tab. Do not upload
+   `.env` or the Firebase service-account file.
+
+```env
+MONGODB_URI=<your MongoDB Atlas connection string>
+JWT_SECRET=<long random secret>
+JWT_EXPIRES_IN=7d
+FIREBASE_PROJECT_ID=<Firebase project id>
+FIREBASE_CLIENT_EMAIL=<Firebase service account email>
+FIREBASE_PRIVATE_KEY=<private key with \n for line breaks>
+```
+
+Railway supplies `PORT` automatically. The included `backend/railway.json`
+installs with `npm ci`, starts with `npm start`, and uses `/api/health` as the
+health check. After deployment, use the generated Railway domain as the API
+base URL, ending in `/api`.
+
 ### Example local backend URL
 
 Android emulator:
