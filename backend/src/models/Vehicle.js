@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 const vehicleSchema = new mongoose.Schema(
   {
+    customerName: { type: String, trim: true },
+    customerCnic: { type: String, trim: true },
     vehicleNumber: {
       type: String,
       required: true,
@@ -41,6 +43,8 @@ const vehicleSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+vehicleSchema.index({ customerCnic: 1, customerName: 1, status: 1 });
 
 // vehicleSchema.index({vehicleNumber: 1});
 // vehicleSchema.index({chassisNumber: 1});
