@@ -78,10 +78,10 @@ FIREBASE_CLIENT_EMAIL=<Firebase service account email>
 FIREBASE_PRIVATE_KEY=<private key with \n for line breaks>
 ```
 
-Railway supplies `PORT` automatically. The included `backend/railway.json`
-installs with `npm ci`, starts with `npm start`, and uses `/api/health` as the
-health check. After deployment, use the generated Railway domain as the API
-base URL, ending in `/api`.
+Railway supplies `PORT` automatically. The included Railway configs install
+production dependencies with `npm install --omit=dev`, start with `npm start`,
+and use `/api/health` as the health check. After deployment, use the generated
+Railway domain as the API base URL, ending in `/api`.
 
 ### Example local backend URL
 
