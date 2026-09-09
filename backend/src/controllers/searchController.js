@@ -14,10 +14,10 @@ export async function searchVehicle(req, res) {
   }
 
   const normalized = value.trim().toUpperCase();
-  const vehicle = await Vehicle.findOne({ [field]: normalized }).populate(
-    'dealer',
-    'name email phone fcmToken',
-  );
+  const vehicle = await Vehicle.findOne({
+    [field]: normalized,
+    status: { $ne: 'DELETED' },
+  }).populate('dealer', 'name email phone fcmToken');
 
   await SearchLog.create({
     searchedBy: req.user._id,

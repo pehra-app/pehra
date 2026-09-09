@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import './App.css';
 
 const API_BASE_URL =
@@ -468,20 +469,24 @@ function VehicleForm({ token, vehicle, onSaved, onCancel }) {
         </label>
       </div>
       <div className="role-switch status-switch">
-        <button
-          type="button"
-          className={form.status === 'CLEAR' ? 'selected clear-choice' : ''}
-          onClick={() => set('status', 'CLEAR')}
-        >
-          Clear
-        </button>
-        <button
-          type="button"
-          className={form.status === 'WANTED' ? 'selected wanted-choice' : ''}
-          onClick={() => set('status', 'WANTED')}
-        >
-          Wanted
-        </button>
+        {(vehicle ? ['CLEAR', 'WANTED', 'DELETED'] : ['CLEAR', 'WANTED']).map(
+          status => (
+            <button
+              type="button"
+              key={status}
+              className={`${form.status === status ? 'selected ' : ''}${
+                status === 'CLEAR'
+                  ? 'clear-choice'
+                  : status === 'WANTED'
+                  ? 'wanted-choice'
+                  : 'deleted-choice'
+              }`}
+              onClick={() => set('status', status)}
+            >
+              {status}
+            </button>
+          ),
+        )}
       </div>
       <button className="primary-button compact" disabled={busy}>
         {busy ? 'Saving...' : vehicle ? 'Update vehicle' : 'Save vehicle'}
@@ -494,6 +499,7 @@ function VehiclesPage({ token }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -517,24 +523,59 @@ function VehiclesPage({ token }) {
     if (!window.confirm(`Delete ${vehicle.vehicleNumber}?`)) return;
     try {
       await request(`/vehicles/${vehicle._id}`, { method: 'DELETE' }, token);
-      setMessage('Vehicle deleted.');
+      setMessage('Vehicle marked as deleted.');
       loadVehicles();
     } catch (error) {
       setMessage(error.message);
     }
   }
-  const visible = vehicles.filter(vehicle =>
-    [
+  const visible = vehicles.filter(vehicle => {
+    const matchesStatus =
+      statusFilter === 'ALL' || vehicle.status === statusFilter;
+    const matchesSearch = [
       vehicle.vehicleNumber,
       vehicle.customerName,
       vehicle.customerCnic,
       vehicle.make,
       vehicle.model,
+      vehicle.dealer?.name,
     ]
       .join(' ')
       .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
+      .includes(search.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  function exportVehicles() {
+    const rows = vehicles.map(vehicle => ({
+      Status: vehicle.status,
+      'Vehicle Number': vehicle.vehicleNumber,
+      'Customer Name': vehicle.customerName,
+      'Customer CNIC': vehicle.customerCnic,
+      Chassis: vehicle.chassisNumber,
+      Engine: vehicle.engineNumber,
+      Make: vehicle.make || '',
+      Model: vehicle.model || '',
+      Year: vehicle.year || '',
+      Color: vehicle.color || '',
+      Dealer: vehicle.dealer?.name || 'Admin',
+      'Dealer Email': vehicle.dealer?.email || '',
+      'Dealer Phone': vehicle.dealer?.phone || '',
+      'Created At': vehicle.createdAt
+        ? new Date(vehicle.createdAt).toLocaleString()
+        : '',
+      'Updated At': vehicle.updatedAt
+        ? new Date(vehicle.updatedAt).toLocaleString()
+        : '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vehicles');
+    XLSX.writeFile(workbook, 'pehra-vehicle-registry.xlsx');
+    setMessage(
+      `Exported ${rows.length} vehicle record${rows.length === 1 ? '' : 's'}.`,
+    );
+  }
   if (editing)
     return (
       <VehicleForm
@@ -567,12 +608,41 @@ function VehiclesPage({ token }) {
       <div className="data-panel">
         <div className="panel-header">
           <h3>Vehicle registry</h3>
-          <input
-            className="table-search"
-            placeholder="Search records"
-            value={search}
-            onChange={event => setSearch(event.target.value)}
-          />
+          <div className="table-tools">
+            <button
+              className="secondary-button compact"
+              onClick={exportVehicles}
+            >
+              Export Excel
+            </button>
+            <input
+              className="table-search"
+              placeholder="Search records"
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+            />
+          </div>
+        </div>
+        <div
+          className="status-filters"
+          aria-label="Filter vehicle records by status"
+        >
+          {['ALL', 'CLEAR', 'WANTED', 'DELETED'].map(status => (
+            <button
+              type="button"
+              key={status}
+              className={statusFilter === status ? 'selected' : ''}
+              onClick={() => setStatusFilter(status)}
+            >
+              {status === 'ALL' ? 'All' : status}
+              <span>
+                {status === 'ALL'
+                  ? vehicles.length
+                  : vehicles.filter(vehicle => vehicle.status === status)
+                      .length}
+              </span>
+            </button>
+          ))}
         </div>
         {loading ? (
           <p className="empty-state">Loading vehicles...</p>
@@ -586,6 +656,7 @@ function VehiclesPage({ token }) {
                   <th>Vehicle</th>
                   <th>Customer</th>
                   <th>Details</th>
+                  <th>Dealer</th>
                   <th>Status</th>
                   <th />
                 </tr>
@@ -608,9 +679,17 @@ function VehiclesPage({ token }) {
                       <small>Engine {vehicle.engineNumber}</small>
                     </td>
                     <td>
+                      <strong>{vehicle.dealer?.name || 'Admin'}</strong>
+                      <small>{vehicle.dealer?.email || ''}</small>
+                    </td>
+                    <td>
                       <span
                         className={`status-label ${
-                          vehicle.status === 'WANTED' ? 'inactive' : 'active'
+                          vehicle.status === 'WANTED'
+                            ? 'inactive'
+                            : vehicle.status === 'DELETED'
+                            ? 'deleted'
+                            : 'active'
                         }`}
                       >
                         {vehicle.status}
@@ -627,8 +706,9 @@ function VehiclesPage({ token }) {
                         <button
                           className="text-button danger-button"
                           onClick={() => remove(vehicle)}
+                          disabled={vehicle.status === 'DELETED'}
                         >
-                          Delete
+                          {vehicle.status === 'DELETED' ? 'Deleted' : 'Delete'}
                         </button>
                       </div>
                     </td>

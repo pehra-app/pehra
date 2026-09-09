@@ -26,7 +26,17 @@ export function AuthProvider({ children }) {
           AsyncStorage.getItem('pehra_user'),
         ]);
         if (token && storedUser) {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          if (['DEALER', 'AGENT'].includes(parsedUser.role)) {
+            setUser(parsedUser);
+          } else {
+            // Admin mobile sessions are intentionally discarded. The admin
+            // role is supported by admin-web, not by the mobile app.
+            await Promise.all([
+              AsyncStorage.removeItem('pehra_token'),
+              AsyncStorage.removeItem('pehra_user'),
+            ]);
+          }
         }
       } finally {
         setBooting(false);
@@ -53,6 +63,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
+
+    if (!['DEALER', 'AGENT'].includes(data.user?.role)) {
+      // Admin login is retained by the API for admin-web and is disabled here.
+      throw new Error('Admin accounts must use the admin web portal.');
+    }
 
     try {
       await Promise.all([

@@ -29,7 +29,11 @@ const vehicleSchema = new mongoose.Schema(
     model: { type: String, trim: true },
     year: { type: Number },
     color: { type: String, trim: true },
-    status: { type: String, enum: ['CLEAR', 'WANTED'], default: 'CLEAR' },
+    status: {
+      type: String,
+      enum: ['CLEAR', 'WANTED', 'DELETED'],
+      default: 'CLEAR',
+    },
     dealer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

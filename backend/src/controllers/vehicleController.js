@@ -26,7 +26,10 @@ function canModify(reqUser, vehicle) {
 }
 
 export async function listVehicles(req, res) {
-  const filter = req.user.role === 'DEALER' ? { dealer: req.user._id } : {};
+  const filter =
+    req.user.role === 'DEALER'
+      ? { dealer: req.user._id, status: { $ne: 'DELETED' } }
+      : {};
   const vehicles = await Vehicle.find(filter)
     .populate('dealer', 'name email phone')
     .sort({ createdAt: -1 });
@@ -94,12 +97,10 @@ export async function createVehicle(req, res) {
     !chassisNumber ||
     !engineNumber
   ) {
-    return res
-      .status(400)
-      .json({
-        message:
-          'Customer name, CNIC, vehicle, chassis and engine numbers are required.',
-      });
+    return res.status(400).json({
+      message:
+        'Customer name, CNIC, vehicle, chassis and engine numbers are required.',
+    });
   }
 
   if (req.user.role === 'DEALER') {
@@ -109,11 +110,9 @@ export async function createVehicle(req, res) {
       status: 'WANTED',
     });
     if (wantedCustomer) {
-      return res
-        .status(409)
-        .json({
-          message: 'This customer already has a wanted vehicle record.',
-        });
+      return res.status(409).json({
+        message: 'This customer already has a wanted vehicle record.',
+      });
     }
   }
 
@@ -173,11 +172,9 @@ export async function updateVehicle(req, res) {
       status: 'WANTED',
     });
     if (wantedCustomer) {
-      return res
-        .status(409)
-        .json({
-          message: 'This customer already has a wanted vehicle record.',
-        });
+      return res.status(409).json({
+        message: 'This customer already has a wanted vehicle record.',
+      });
     }
   }
 
@@ -191,8 +188,16 @@ export async function updateVehicle(req, res) {
     vehicle.chassisNumber = normalize(req.body.chassisNumber);
   if (req.body.engineNumber)
     vehicle.engineNumber = normalize(req.body.engineNumber);
-  if (req.body.status)
-    vehicle.status = req.body.status === 'WANTED' ? 'WANTED' : 'CLEAR';
+  if (req.body.status) {
+    if (req.body.status === 'DELETED' && req.user.role !== 'ADMIN') {
+      return res
+        .status(403)
+        .json({ message: 'Only admins can delete records.' });
+    }
+    vehicle.status = ['CLEAR', 'WANTED', 'DELETED'].includes(req.body.status)
+      ? req.body.status
+      : 'CLEAR';
+  }
   if (req.body.customerName !== undefined)
     vehicle.customerName = normalize(req.body.customerName);
   if (req.body.customerCnic !== undefined)
@@ -207,6 +212,7 @@ export async function deleteVehicle(req, res) {
   if (!vehicle) return res.status(404).json({ message: 'Vehicle not found.' });
   if (!canModify(req.user, vehicle))
     return res.status(403).json({ message: 'Not allowed.' });
-  await vehicle.deleteOne();
-  res.json({ message: 'Vehicle deleted.' });
+  vehicle.status = 'DELETED';
+  await vehicle.save();
+  res.json({ message: 'Vehicle marked as deleted.' });
 }

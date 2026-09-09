@@ -421,6 +421,11 @@
   color: #af3f2c;
   background: #f9e5df;
 }
+.status-switch .deleted-choice {
+  border-color: #aeb4ae;
+  color: #6a6f6b;
+  background: #e5e7e2;
+}
 .data-panel {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -435,6 +440,44 @@
 .panel-header > span {
   color: var(--muted);
   font: 12px Arial, sans-serif;
+}
+.table-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.secondary-button {
+  padding: 9px 12px;
+  border: 1px solid var(--green);
+  color: var(--green);
+  background: transparent;
+  font: 700 11px Arial, sans-serif;
+}
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 0 16px;
+}
+.status-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: transparent;
+  font: 700 10px Arial, sans-serif;
+  text-transform: uppercase;
+}
+.status-filters button.selected {
+  border-color: var(--green);
+  color: var(--green);
+  background: #e4eee6;
+}
+.status-filters span {
+  color: inherit;
+  font-weight: 400;
 }
 .table-search {
   width: 190px;
@@ -501,6 +544,10 @@ td small {
   color: #af3f2c;
   background: #f9e5df;
 }
+.status-label.deleted {
+  color: #6a6f6b;
+  background: #e5e7e2;
+}
 .text-button {
   padding: 4px 0;
   border: 0;
@@ -512,6 +559,10 @@ td small {
 .danger-button {
   margin-left: 12px;
   color: #af3f2c;
+}
+.danger-button:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 .empty-state {
   padding: 35px 0;
@@ -728,6 +779,11 @@ td small {
   }
   .panel-header {
     align-items: flex-start;
+    flex-direction: column;
+  }
+  .table-tools {
+    width: 100%;
+    align-items: stretch;
     flex-direction: column;
   }
   .table-search {

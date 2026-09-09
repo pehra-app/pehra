@@ -2,7 +2,9 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/auth/LoginScreen';
-import AdminNavigator from './AdminNavigator';
+// Admin mobile navigation is retained for reference but disabled. Admin users
+// are now served by the admin-web portal.
+// import AdminNavigator from './AdminNavigator';
 import DealerNavigator from './DealerNavigator';
 import AgentNavigator from './AgentNavigator';
 import StartupSplash from '../components/StartupSplash';
@@ -22,7 +24,9 @@ export default function RootNavigator() {
     );
   }
 
-  if (user.role === 'ADMIN') return <AdminNavigator />;
+  // Mobile ADMIN access is disabled. Keep the previous route commented out so
+  // the admin navigation code remains available for reference.
+  // if (user.role === 'ADMIN') return <AdminNavigator />;
   if (user.role === 'DEALER') return <DealerNavigator />;
   return <AgentNavigator />;
 }
