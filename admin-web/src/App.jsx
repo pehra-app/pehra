@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import './App.css';
 
@@ -21,6 +21,35 @@ async function request(path, options = {}, token) {
   return data;
 }
 
+function PasswordField({ label, value, onChange, ...props }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <label className="password-field">
+      {label}
+      <span className="password-input-wrap">
+        <input
+          {...props}
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          aria-label={visible ? 'Hide password' : 'Show password'}
+          onClick={() => setVisible(current => !current)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+            <circle cx="12" cy="12" r="2.5" />
+          </svg>
+        </button>
+      </span>
+    </label>
+  );
+}
+
 function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +67,7 @@ function Login({ onLogin }) {
       });
       if (session.user?.role !== 'ADMIN')
         throw new Error('This portal is only available to administrators.');
-      localStorage.setItem(sessionKey, JSON.stringify(session));
+      window.localStorage.setItem(sessionKey, JSON.stringify(session));
       onLogin(session);
     } catch (loginError) {
       setError(loginError.message);
@@ -68,16 +97,13 @@ function Login({ onLogin }) {
               required
             />
           </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <PasswordField
+            label="Password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+            autoComplete="current-password"
+            required
+          />
           {error && <p className="form-error">{error}</p>}
           <button className="primary-button" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign in to portal'}
@@ -120,6 +146,8 @@ function AccountsPage({ token }) {
     role: 'DEALER',
   });
   const [showForm, setShowForm] = useState(false);
+  const [resetUser, setResetUser] = useState(null);
+  const [resetPassword, setResetPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -180,6 +208,29 @@ function AccountsPage({ token }) {
     }
   }
 
+  async function updatePassword(event) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage('');
+    try {
+      await request(
+        `/users/${resetUser._id}/password`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ password: resetPassword }),
+        },
+        token,
+      );
+      setResetUser(null);
+      setResetPassword('');
+      setMessage(`Password reset for ${resetUser.name}.`);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="workspace-page">
       <div className="page-heading">
@@ -230,18 +281,16 @@ function AccountsPage({ token }) {
                 }
               />
             </label>
-            <label>
-              Initial password
-              <input
-                type="password"
-                minLength="8"
-                value={form.password}
-                onChange={event =>
-                  setForm({ ...form, password: event.target.value })
-                }
-                required
-              />
-            </label>
+            <PasswordField
+              label="Initial password"
+              minLength="8"
+              value={form.password}
+              onChange={event =>
+                setForm({ ...form, password: event.target.value })
+              }
+              autoComplete="new-password"
+              required
+            />
           </div>
           <div className="role-switch">
             <button
@@ -287,33 +336,85 @@ function AccountsPage({ token }) {
               </thead>
               <tbody>
                 {users.map(user => (
-                  <tr key={user._id}>
-                    <td>
-                      <strong>{user.name}</strong>
-                      <small>{user.phone || 'No phone provided'}</small>
-                    </td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className="role-label">{user.role}</span>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-label ${
-                          user.isActive ? 'active' : 'inactive'
-                        }`}
-                      >
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="text-button"
-                        onClick={() => toggleUser(user)}
-                      >
-                        {user.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={user._id}>
+                    <tr>
+                      <td>
+                        <strong>{user.name}</strong>
+                        <small>{user.phone || 'No phone provided'}</small>
+                      </td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span className="role-label">{user.role}</span>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-label ${
+                            user.isActive ? 'active' : 'inactive'
+                          }`}
+                        >
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            className={`text-button status-action ${
+                              user.isActive
+                                ? 'deactivate-action'
+                                : 'activate-action'
+                            }`}
+                            onClick={() => toggleUser(user)}
+                          >
+                            {user.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            className="text-button reset-action"
+                            onClick={() => {
+                              setResetUser(user);
+                              setResetPassword('');
+                            }}
+                          >
+                            Reset password
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {resetUser?._id === user._id && (
+                      <tr>
+                        <td colSpan="5">
+                          <form
+                            className="reset-form"
+                            onSubmit={updatePassword}
+                          >
+                            <strong>Reset {user.name}'s password</strong>
+                            <PasswordField
+                              label="New password"
+                              minLength="8"
+                              value={resetPassword}
+                              onChange={event =>
+                                setResetPassword(event.target.value)
+                              }
+                              autoComplete="new-password"
+                              required
+                            />
+                            <button
+                              className="primary-button compact"
+                              disabled={busy}
+                            >
+                              {busy ? 'Resetting...' : 'Save new password'}
+                            </button>
+                            <button
+                              type="button"
+                              className="text-button"
+                              onClick={() => setResetUser(null)}
+                            >
+                              Cancel
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -506,7 +607,7 @@ function VehiclesPage({ token }) {
   async function loadVehicles() {
     setLoading(true);
     try {
-      setVehicles(await request('/vehicles', {}, token));
+      setVehicles(await request('/vehicles?includeDeleted=true', {}, token));
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -514,7 +615,7 @@ function VehiclesPage({ token }) {
     }
   }
   useEffect(() => {
-    request('/vehicles', {}, token)
+    request('/vehicles?includeDeleted=true', {}, token)
       .then(setVehicles)
       .catch(error => setMessage(error.message))
       .finally(() => setLoading(false));
@@ -547,27 +648,29 @@ function VehiclesPage({ token }) {
   });
 
   function exportVehicles() {
-    const rows = vehicles.map(vehicle => ({
-      Status: vehicle.status,
-      'Vehicle Number': vehicle.vehicleNumber,
-      'Customer Name': vehicle.customerName,
-      'Customer CNIC': vehicle.customerCnic,
-      Chassis: vehicle.chassisNumber,
-      Engine: vehicle.engineNumber,
-      Make: vehicle.make || '',
-      Model: vehicle.model || '',
-      Year: vehicle.year || '',
-      Color: vehicle.color || '',
-      Dealer: vehicle.dealer?.name || 'Admin',
-      'Dealer Email': vehicle.dealer?.email || '',
-      'Dealer Phone': vehicle.dealer?.phone || '',
-      'Created At': vehicle.createdAt
-        ? new Date(vehicle.createdAt).toLocaleString()
-        : '',
-      'Updated At': vehicle.updatedAt
-        ? new Date(vehicle.updatedAt).toLocaleString()
-        : '',
-    }));
+    const rows = vehicles
+      .filter(vehicle => vehicle.status !== 'DELETED')
+      .map(vehicle => ({
+        Status: vehicle.status,
+        'Vehicle Number': vehicle.vehicleNumber,
+        'Customer Name': vehicle.customerName,
+        'Customer CNIC': vehicle.customerCnic,
+        Chassis: vehicle.chassisNumber,
+        Engine: vehicle.engineNumber,
+        Make: vehicle.make || '',
+        Model: vehicle.model || '',
+        Year: vehicle.year || '',
+        Color: vehicle.color || '',
+        Dealer: vehicle.dealer?.name || 'Admin',
+        'Dealer Email': vehicle.dealer?.email || '',
+        'Dealer Phone': vehicle.dealer?.phone || '',
+        'Created At': vehicle.createdAt
+          ? new Date(vehicle.createdAt).toLocaleString()
+          : '',
+        'Updated At': vehicle.updatedAt
+          ? new Date(vehicle.updatedAt).toLocaleString()
+          : '',
+      }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Vehicles');
@@ -706,9 +809,8 @@ function VehiclesPage({ token }) {
                         <button
                           className="text-button danger-button"
                           onClick={() => remove(vehicle)}
-                          disabled={vehicle.status === 'DELETED'}
                         >
-                          {vehicle.status === 'DELETED' ? 'Deleted' : 'Delete'}
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -991,10 +1093,10 @@ function Dashboard({ session, onLogout }) {
 
 export default function App() {
   const [session, setSession] = useState(() =>
-    JSON.parse(localStorage.getItem(sessionKey) || 'null'),
+    JSON.parse(window.localStorage.getItem(sessionKey) || 'null'),
   );
   function logout() {
-    localStorage.removeItem(sessionKey);
+    window.localStorage.removeItem(sessionKey);
     setSession(null);
   }
   return session?.user?.role === 'ADMIN' ? (

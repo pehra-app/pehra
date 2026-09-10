@@ -376,6 +376,18 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+.password-field {
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font: 700 11px Arial, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.password-input-wrap {
+  position: relative;
+  display: block;
+}
 .form-grid input {
   width: 100%;
   padding: 12px;
@@ -385,6 +397,53 @@
   color: var(--ink);
   background: #fff;
   font: 14px Arial, sans-serif;
+}
+.password-input-wrap input {
+  width: 100%;
+  padding: 12px 42px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  outline: 0;
+  color: var(--ink);
+  background: #fff;
+  font: 14px Arial, sans-serif;
+}
+.password-input-wrap input:focus {
+  border-color: var(--green);
+}
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  transform: translateY(-50%);
+  border: 0;
+  color: var(--green);
+  background: transparent;
+  line-height: 1;
+}
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.reset-form {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  padding: 14px 0 2px;
+}
+.reset-form strong {
+  margin-right: auto;
+  color: var(--ink);
+  font: 400 18px Georgia, serif;
+}
+.reset-form .password-field {
+  min-width: 220px;
 }
 .form-grid input:focus,
 .table-search:focus {
@@ -556,6 +615,30 @@ td small {
   font: 700 11px Arial, sans-serif;
   white-space: nowrap;
 }
+.row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.row-actions .text-button {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.row-actions .text-button:hover {
+  border-color: var(--green);
+  background: #e4eee6;
+}
+.row-actions .activate-action {
+  color: var(--green);
+}
+.row-actions .deactivate-action {
+  color: #af3f2c;
+}
+.row-actions .reset-action {
+  color: var(--ink);
+}
 .danger-button {
   margin-left: 12px;
   color: #af3f2c;
@@ -568,10 +651,6 @@ td small {
   padding: 35px 0;
   color: var(--muted);
   font: 13px Arial, sans-serif;
-}
-.row-actions {
-  display: flex;
-  align-items: center;
 }
 .search-panel {
   max-width: 760px;

@@ -26,10 +26,12 @@ function canModify(reqUser, vehicle) {
 }
 
 export async function listVehicles(req, res) {
-  const filter =
-    req.user.role === 'DEALER'
-      ? { dealer: req.user._id, status: { $ne: 'DELETED' } }
-      : {};
+  const filter = {
+    ...(req.user.role === 'ADMIN' && req.query.includeDeleted === 'true'
+      ? {}
+      : { status: { $ne: 'DELETED' } }),
+    ...(req.user.role === 'DEALER' ? { dealer: req.user._id } : {}),
+  };
   const vehicles = await Vehicle.find(filter)
     .populate('dealer', 'name email phone')
     .sort({ createdAt: -1 });
@@ -41,7 +43,8 @@ export async function getVehicle(req, res) {
     'dealer',
     'name email phone',
   );
-  if (!vehicle) return res.status(404).json({ message: 'Vehicle not found.' });
+  if (!vehicle || vehicle.status === 'DELETED')
+    return res.status(404).json({ message: 'Vehicle not found.' });
 
   if (
     req.user.role === 'DEALER' &&
