@@ -26,7 +26,7 @@ npm install @react-navigation/native @react-navigation/native-stack @react-navig
 npm install react-native-screens react-native-safe-area-context
 npm install axios @react-native-async-storage/async-storage
 npm install react-native-vector-icons
-npm install react-native-push-notification socket.io-client
+ npm install socket.io-client
 npx pod-install ios
 ```
 
@@ -38,7 +38,8 @@ Android:
 2. Add Android app with your package name.
 3. Download `google-services.json`.
 4. Put it in `android/app/google-services.json`.
-5. Configure `react-native-push-notification` for Android 13 notification permission and FCM.
+5. The app uses `@react-native-firebase/messaging` for FCM and Notifee for
+   foreground notification display. Allow notification permission when prompted.
 
 iOS:
 
@@ -98,8 +99,8 @@ Set the mobile URL in:
 `src/api/client.js`
 
 Set the backend FCM HTTP v1 credentials in `backend/.env`. The service account needs
-permission to send Firebase Cloud Messaging messages. The backend uses the raw FCM
-HTTP v1 API; the mobile app does not install the Firebase JavaScript SDK. Native
+permission to send Firebase Cloud Messaging messages. The mobile app uses the
+Firebase JavaScript SDK for token registration and message handling. Native
 Android/iOS push services are still required to receive background messages.
 
 Foreground dealer sessions use Socket.IO. When the dealer socket is not connected,

@@ -1,60 +1,59 @@
 import { Alert } from 'react-native';
-import PushNotification from 'react-native-push-notification';
+import notifee, { AndroidImportance } from '@notifee/react-native';
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  registerDeviceForRemoteMessages,
+} from '@react-native-firebase/messaging';
 import { io } from 'socket.io-client';
 import api from '../api/client';
 import { SOCKET_BASE_URL } from '../api/client';
 
 let socket;
 let configured = false;
-let tokenHandler;
+let unsubscribeMessage;
 
-function configurePushNotifications() {
+async function displayNotification(title, body, data) {
+  await notifee.displayNotification({
+    title,
+    body,
+    data,
+    android: {
+      channelId: 'pehra-alerts',
+      pressAction: { id: 'default' },
+    },
+  });
+}
+
+async function configurePushNotifications() {
   if (configured) return;
 
-  PushNotification.configure({
-    onRegister: device => {
-      if (device.token && tokenHandler) tokenHandler(device.token);
-    },
-    onNotification: notification => {
-      console.log(
-        '[notifications] Firebase notification received:',
-        notification,
-      );
-      if (notification.foreground && notification.message) {
-        PushNotification.localNotification({
-          channelId: 'pehra-alerts',
-          title: notification.title || 'Pehra alert',
-          message: notification.message,
-        });
-      }
-      notification.finish?.(PushNotification.FetchResult?.NoData);
-    },
-    requestPermissions: true,
-    popInitialNotification: true,
+  await notifee.requestPermission();
+  await notifee.createChannel({
+    id: 'pehra-alerts',
+    name: 'Pehra alerts',
+    importance: AndroidImportance.HIGH,
   });
-
-  PushNotification.createChannel(
-    {
-      channelId: 'pehra-alerts',
-      channelName: 'Pehra alerts',
-      importance: 4,
-      vibrate: true,
-    },
-    () => {},
-  );
   configured = true;
 }
 
 export async function startNotificationSession(accessToken) {
-  tokenHandler = fcmToken => {
-    console.log(
-      `[notifications] FCM token received: ${fcmToken.slice(0, 8)}...`,
-    );
-    api.put('/devices/token', { fcmToken }).catch(error => {
-      console.warn('Could not register the push token.', error.message);
-    });
-  };
-  configurePushNotifications();
+  const messagingInstance = getMessaging();
+  await configurePushNotifications();
+  await registerDeviceForRemoteMessages(messagingInstance);
+  const fcmToken = await getToken(messagingInstance);
+  console.log(`[notifications] FCM token received: ${fcmToken.slice(0, 8)}...`);
+  api.put('/devices/token', { fcmToken }).catch(error => {
+    console.warn('Could not register the push token.', error.message);
+  });
+
+  unsubscribeMessage = onMessage(messagingInstance, async remoteMessage => {
+    const title = remoteMessage.notification?.title || 'Pehra alert';
+    const body =
+      remoteMessage.notification?.body || remoteMessage.data?.message;
+    if (body) await displayNotification(title, body, remoteMessage.data);
+  });
 
   socket = io(SOCKET_BASE_URL, {
     auth: { token: accessToken },
@@ -72,17 +71,13 @@ export async function startNotificationSession(accessToken) {
   socket.on('new_alert', alert => {
     console.log('[notifications] Socket new_alert received:', alert);
     Alert.alert('Wanted vehicle located', alert.message, [{ text: 'OK' }]);
-    PushNotification.localNotification({
-      channelId: 'pehra-alerts',
-      title: 'Pehra: Wanted vehicle located',
-      message: alert.message,
-      userInfo: alert,
-    });
+    displayNotification('Pehra: Wanted vehicle located', alert.message, alert);
   });
 }
 
 export function stopNotificationSession() {
+  unsubscribeMessage?.();
+  unsubscribeMessage = null;
   socket?.disconnect();
   socket = null;
-  tokenHandler = null;
 }
