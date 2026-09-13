@@ -31,8 +31,21 @@ export async function listVehicles(req, res) {
       ? {}
       : { status: { $ne: 'DELETED' } }),
     ...(req.user.role === 'DEALER' ? { dealer: req.user._id } : {}),
+    ...(req.user.role === 'AGENT' && req.query.status
+      ? { status: req.query.status }
+      : {}),
+    ...(req.user.role === 'AGENT' && req.query.dealerId
+      ? { dealer: req.query.dealerId }
+      : {}),
   };
   const vehicles = await Vehicle.find(filter)
+    .populate('dealer', 'name email phone')
+    .sort({ createdAt: -1 });
+  res.json(vehicles);
+}
+
+export async function listWantedCustomers(req, res) {
+  const vehicles = await Vehicle.find({ status: 'WANTED' })
     .populate('dealer', 'name email phone')
     .sort({ createdAt: -1 });
   res.json(vehicles);
@@ -57,16 +70,14 @@ export async function getVehicle(req, res) {
 }
 
 export async function findCustomerMatches(req, res) {
-  const customerName = normalize(req.query.customerName);
   const customerCnic = normalize(req.query.customerCnic);
   const excludeId = req.query.excludeId;
 
-  if (!customerName || !customerCnic) {
+  if (!customerCnic) {
     return res.json({ matches: [] });
   }
 
   const filter = {
-    customerName,
     customerCnic,
     status: 'WANTED',
     ...(excludeId ? { _id: { $ne: excludeId } } : {}),

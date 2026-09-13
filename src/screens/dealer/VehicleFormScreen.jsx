@@ -26,7 +26,41 @@ export default function VehicleFormScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(Boolean(vehicleId));
   const [customerBlocked, setCustomerBlocked] = useState(false);
+  const [wantedMatch, setWantedMatch] = useState(null);
   const set = (key, value) => setForm(v => ({ ...v, [key]: value }));
+
+  useEffect(() => {
+    const customerCnic = form.customerCnic.trim();
+    if (!customerCnic) {
+      setWantedMatch(null);
+      setCustomerBlocked(false);
+      return undefined;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/vehicles/customer-match', {
+          params: {
+            customerCnic,
+            ...(vehicleId ? { excludeId: vehicleId } : {}),
+          },
+        });
+        const match = data.matches?.[0] || null;
+        setWantedMatch(match);
+        setCustomerBlocked(Boolean(match));
+        if (match) {
+          Alert.alert(
+            'Wanted customer detected',
+            `CNIC ${customerCnic} matches a wanted customer record.\n\nVehicle: ${
+              match.vehicleNumber
+            }\nDealer: ${match.dealer?.name || 'Unknown dealer'}`,
+          );
+        }
+      } catch {}
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [form.customerCnic, vehicleId]);
 
   useEffect(() => {
     if (vehicleId) {
@@ -50,31 +84,6 @@ export default function VehicleFormScreen({ route, navigation }) {
         .finally(() => setInitialLoading(false));
     }
   }, [vehicleId]);
-
-  const checkCustomer = async () => {
-    if (!form.customerName.trim() || !form.customerCnic.trim()) return;
-    try {
-      const { data } = await api.get('/vehicles/customer-match', {
-        params: {
-          customerName: form.customerName.trim(),
-          customerCnic: form.customerCnic.trim(),
-          ...(vehicleId ? { excludeId: vehicleId } : {}),
-        },
-      });
-      if (data.matches?.length) {
-        const match = data.matches[0];
-        setCustomerBlocked(true);
-        Alert.alert(
-          'Wanted customer record',
-          `${form.customerName.trim()} (${form.customerCnic.trim()}) has a wanted vehicle record.\n\nVehicle: ${
-            match.vehicleNumber
-          }\nChassis: ${match.chassisNumber}\nDealer: ${
-            match.dealer?.name || 'Unknown dealer'
-          }`,
-        );
-      }
-    } catch {}
-  };
 
   const submit = async () => {
     if (customerBlocked) return;
@@ -134,19 +143,30 @@ export default function VehicleFormScreen({ route, navigation }) {
         label="Customer Name"
         value={form.customerName}
         onChangeText={v => set('customerName', v)}
-        onBlur={checkCustomer}
         autoCapitalize="words"
         disabled={customerBlocked}
       />
       <AppInput
         label="Customer CNIC"
         value={form.customerCnic}
-        onChangeText={v => set('customerCnic', v)}
-        onBlur={checkCustomer}
+        onChangeText={v => {
+          set('customerCnic', v);
+          setWantedMatch(null);
+          setCustomerBlocked(false);
+        }}
         keyboardType="number-pad"
         placeholder="35202-1234567-1"
-        disabled={customerBlocked}
       />
+      {wantedMatch && (
+        <View style={styles.warning}>
+          <Text style={styles.warningTitle}>WANTED / DEFAULTER CUSTOMER</Text>
+          <Text style={styles.warningText}>
+            This CNIC matches a wanted customer record. Vehicle{' '}
+            {wantedMatch.vehicleNumber} is registered by{' '}
+            {wantedMatch.dealer?.name || 'another dealer'}.
+          </Text>
+        </View>
+      )}
       <AppInput
         label="Vehicle Number / Registration Number"
         value={form.vehicleNumber}
@@ -253,4 +273,14 @@ const styles = StyleSheet.create({
   wanted: { backgroundColor: colors.dangerSoft, borderColor: '#FCA5A5' },
   choiceText: { fontWeight: '900', color: colors.muted },
   disabled: { opacity: 0.55 },
+  warning: {
+    backgroundColor: colors.dangerSoft,
+    borderColor: '#FCA5A5',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 5,
+  },
+  warningTitle: { color: colors.danger, fontWeight: '900', fontSize: 13 },
+  warningText: { color: '#991B1B', lineHeight: 19 },
 });

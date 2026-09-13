@@ -22,3 +22,11 @@ export async function dealerStats(req, res) {
   ]);
   res.json({ total, clear, wanted, alerts });
 }
+
+export async function agentStats(req, res) {
+  const [dealers, wanted] = await Promise.all([
+    User.countDocuments({ role: 'DEALER' }),
+    Vehicle.countDocuments({ status: 'WANTED' }),
+  ]);
+  res.json({ dealers, wanted });
+}

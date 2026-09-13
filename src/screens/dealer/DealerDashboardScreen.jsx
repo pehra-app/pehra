@@ -62,6 +62,15 @@ export default function DealerDashboardScreen({ navigation }) {
           Add, edit, delete or mark a vehicle wanted.
         </Text>
       </Pressable>
+      <Pressable
+        onPress={() => navigation.navigate('Wanted')}
+        style={styles.warningCard}
+      >
+        <Text style={styles.warningTitle}>Defaulter / Wanted Customers</Text>
+        <Text style={styles.warningText}>
+          Review flagged customer records before creating a vehicle record.
+        </Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -85,4 +94,14 @@ const styles = StyleSheet.create({
   },
   ctaTitle: { fontSize: 18, fontWeight: '900', color: '#fff' },
   ctaText: { marginTop: 5, color: '#DDE7FF' },
+  warningCard: {
+    marginTop: 12,
+    backgroundColor: colors.warningSoft,
+    borderColor: '#FCD34D',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+  },
+  warningTitle: { color: colors.warning, fontSize: 18, fontWeight: '900' },
+  warningText: { color: '#92400E', marginTop: 5 },
 });
