@@ -47,7 +47,7 @@ export default function DealerDashboardScreen({ navigation }) {
         ) : (
           <>
             <StatCard label="Total" value={stats.total} />
-            <StatCard label="Clear" value={stats.clear} tone="success" />
+            {/* <StatCard label="Clear" value={stats.clear} tone="success" /> */}
             <StatCard label="Wanted" value={stats.wanted} tone="danger" />
             <StatCard label="Alerts" value={stats.alerts} />
           </>

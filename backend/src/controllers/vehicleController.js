@@ -27,9 +27,12 @@ function canModify(reqUser, vehicle) {
 
 export async function listVehicles(req, res) {
   const filter = {
-    ...(req.user.role === 'ADMIN' && req.query.includeDeleted === 'true'
-      ? {}
-      : { status: { $ne: 'DELETED' } }),
+    // Clear and deleted vehicle records are intentionally excluded from the
+    // active vehicle workflow. The old filter is preserved for later use.
+    status: 'WANTED',
+    // ...(req.user.role === 'ADMIN' && req.query.includeDeleted === 'true'
+    //   ? {}
+    //   : { status: { $ne: 'DELETED' } }),
     ...(req.user.role === 'DEALER' ? { dealer: req.user._id } : {}),
     ...(req.user.role === 'AGENT' && req.query.status
       ? { status: req.query.status }
@@ -56,7 +59,7 @@ export async function getVehicle(req, res) {
     'dealer',
     'name email phone',
   );
-  if (!vehicle || vehicle.status === 'DELETED')
+  if (!vehicle || vehicle.status !== 'WANTED')
     return res.status(404).json({ message: 'Vehicle not found.' });
 
   if (
@@ -100,7 +103,7 @@ export async function createVehicle(req, res) {
     model,
     year,
     color,
-    status = 'CLEAR',
+    // status = 'CLEAR',
     dealerId,
   } = req.body;
 
@@ -155,7 +158,8 @@ export async function createVehicle(req, res) {
     model,
     year,
     color,
-    status: status === 'WANTED' ? 'WANTED' : 'CLEAR',
+    // status: status === 'WANTED' ? 'WANTED' : 'CLEAR',
+    status: 'WANTED',
     dealer,
     createdBy: req.user._id,
   });
@@ -166,6 +170,8 @@ export async function createVehicle(req, res) {
 export async function updateVehicle(req, res) {
   const vehicle = await Vehicle.findById(req.params.id);
   if (!vehicle) return res.status(404).json({ message: 'Vehicle not found.' });
+  if (vehicle.status !== 'WANTED')
+    return res.status(404).json({ message: 'Vehicle not found.' });
   if (!canModify(req.user, vehicle))
     return res.status(403).json({ message: 'Not allowed.' });
 
@@ -208,9 +214,10 @@ export async function updateVehicle(req, res) {
         .status(403)
         .json({ message: 'Only admins can delete records.' });
     }
-    vehicle.status = ['CLEAR', 'WANTED', 'DELETED'].includes(req.body.status)
-      ? req.body.status
-      : 'CLEAR';
+    // vehicle.status = ['CLEAR', 'WANTED', 'DELETED'].includes(req.body.status)
+    //   ? req.body.status
+    //   : 'CLEAR';
+    vehicle.status = 'WANTED';
   }
   if (req.body.customerName !== undefined)
     vehicle.customerName = normalize(req.body.customerName);

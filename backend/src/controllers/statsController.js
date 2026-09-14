@@ -14,13 +14,13 @@ export async function adminStats(req, res) {
 
 export async function dealerStats(req, res) {
   const filter = { dealer: req.user._id };
-  const [total, clear, wanted, alerts] = await Promise.all([
-    Vehicle.countDocuments(filter),
-    Vehicle.countDocuments({ ...filter, status: 'CLEAR' }),
+  const [total, wanted, alerts] = await Promise.all([
+    Vehicle.countDocuments({ ...filter, status: 'WANTED' }),
+    // Vehicle.countDocuments({ ...filter, status: 'CLEAR' }),
     Vehicle.countDocuments({ ...filter, status: 'WANTED' }),
     Alert.countDocuments({ dealer: req.user._id }),
   ]);
-  res.json({ total, clear, wanted, alerts });
+  res.json({ total, clear: 0, wanted, alerts });
 }
 
 export async function agentStats(req, res) {

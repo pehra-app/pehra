@@ -32,7 +32,8 @@ const vehicleSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['CLEAR', 'WANTED', 'DELETED'],
-      default: 'CLEAR',
+      // default: 'CLEAR',
+      default: 'WANTED',
     },
     dealer: {
       type: mongoose.Schema.Types.ObjectId,

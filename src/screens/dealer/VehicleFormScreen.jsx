@@ -17,7 +17,8 @@ const empty = {
   model: '',
   year: '',
   color: '',
-  status: 'CLEAR',
+  // status: 'CLEAR',
+  status: 'WANTED',
 };
 
 export default function VehicleFormScreen({ route, navigation }) {
@@ -77,7 +78,7 @@ export default function VehicleFormScreen({ route, navigation }) {
             model: data.model || '',
             year: data.year ? String(data.year) : '',
             color: data.color || '',
-            status: data.status || 'CLEAR',
+            status: data.status || 'WANTED',
           });
         })
         .catch(() => Alert.alert('Error', 'Could not load vehicle.'))
@@ -221,6 +222,7 @@ export default function VehicleFormScreen({ route, navigation }) {
       </View>
       <Text style={styles.label}>Vehicle Status</Text>
       <View style={styles.row}>
+        {/* Clear status is disabled; this workflow is for wanted vehicles only.
         {['CLEAR', 'WANTED'].map(status => (
           <Pressable
             key={status}
@@ -245,6 +247,16 @@ export default function VehicleFormScreen({ route, navigation }) {
             </Text>
           </Pressable>
         ))}
+        */}
+        <Pressable
+          style={[styles.choice, styles.wanted]}
+          onPress={() => set('status', 'WANTED')}
+          disabled={customerBlocked}
+        >
+          <Text style={[styles.choiceText, { color: colors.danger }]}>
+            WANTED
+          </Text>
+        </Pressable>
       </View>
       <AppButton
         title={vehicleId ? 'Update Vehicle' : 'Save Vehicle'}
@@ -269,7 +281,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  clear: { backgroundColor: colors.successSoft, borderColor: '#86EFAC' },
+  // clear: { backgroundColor: colors.successSoft, borderColor: '#86EFAC' },
   wanted: { backgroundColor: colors.dangerSoft, borderColor: '#FCA5A5' },
   choiceText: { fontWeight: '900', color: colors.muted },
   disabled: { opacity: 0.55 },

@@ -1,7 +1,8 @@
 import Vehicle from '../models/Vehicle.js';
 import SearchLog from '../models/SearchLog.js';
 import Alert from '../models/Alert.js';
-import { notifyDealer } from '../services/socket.js';
+// Socket.IO delivery is retained in services/socket.js for later use.
+import { sendDealerPush } from '../services/notifications.js';
 
 const allowedFields = ['vehicleNumber', 'chassisNumber', 'engineNumber'];
 
@@ -16,7 +17,7 @@ export async function searchVehicle(req, res) {
   const normalized = value.trim().toUpperCase();
   const vehicle = await Vehicle.findOne({
     [field]: normalized,
-    status: { $ne: 'DELETED' },
+    status: 'WANTED',
   }).populate('dealer', 'name email phone fcmToken');
 
   await SearchLog.create({
@@ -44,11 +45,15 @@ export async function searchVehicle(req, res) {
       `[alert] MongoDB alert ${alert._id} created for dealer ${vehicle.dealer._id} and vehicle ${vehicle._id}.`,
     );
 
-    notifyDealer({
-      dealer: vehicle.dealer,
-      vehicle,
-      agent: req.user,
-      message,
+    sendDealerPush({
+      token: vehicle.dealer.fcmToken,
+      title: 'Pehra: Wanted vehicle located',
+      body: message,
+      data: {
+        type: 'WANTED_VEHICLE_FOUND',
+        vehicleId: vehicle._id.toString(),
+        agentId: req.user._id.toString(),
+      },
     })
       .then(delivery => {
         console.log(

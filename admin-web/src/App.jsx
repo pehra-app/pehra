@@ -113,7 +113,7 @@ function Login({ onLogin }) {
       <aside className="login-aside">
         <span>CONTROL ROOM / 01</span>
         <strong>
-          Clear records.
+          Wanted records.
           <br />
           Faster decisions.
         </strong>
@@ -132,7 +132,8 @@ const emptyVehicle = {
   model: '',
   year: '',
   color: '',
-  status: 'CLEAR',
+  // status: 'CLEAR',
+  status: 'WANTED',
 };
 
 function AccountsPage({ token }) {
@@ -570,6 +571,7 @@ function VehicleForm({ token, vehicle, onSaved, onCancel }) {
         </label>
       </div>
       <div className="role-switch status-switch">
+        {/* Clear status is disabled; the active workflow is for wanted vehicles.
         {(vehicle ? ['CLEAR', 'WANTED', 'DELETED'] : ['CLEAR', 'WANTED']).map(
           status => (
             <button
@@ -588,6 +590,19 @@ function VehicleForm({ token, vehicle, onSaved, onCancel }) {
             </button>
           ),
         )}
+        */}
+        {(vehicle ? ['WANTED', 'DELETED'] : ['WANTED']).map(status => (
+          <button
+            type="button"
+            key={status}
+            className={`${form.status === status ? 'selected ' : ''}${
+              status === 'WANTED' ? 'wanted-choice' : 'deleted-choice'
+            }`}
+            onClick={() => set('status', status)}
+          >
+            {status}
+          </button>
+        ))}
       </div>
       <button className="primary-button compact" disabled={busy}>
         {busy ? 'Saving...' : vehicle ? 'Update vehicle' : 'Save vehicle'}
@@ -730,6 +745,7 @@ function VehiclesPage({ token }) {
           className="status-filters"
           aria-label="Filter vehicle records by status"
         >
+          {/* 'CLEAR' is retained in the old filter implementation below.
           {['ALL', 'CLEAR', 'WANTED', 'DELETED'].map(status => (
             <button
               type="button"
@@ -744,6 +760,17 @@ function VehiclesPage({ token }) {
                   : vehicles.filter(vehicle => vehicle.status === status)
                       .length}
               </span>
+            </button>
+          ))}
+          */}
+          {['ALL', 'WANTED', 'DELETED'].map(status => (
+            <button
+              type="button"
+              key={status}
+              className={statusFilter === status ? 'selected' : ''}
+              onClick={() => setStatusFilter(status)}
+            >
+              {status}
             </button>
           ))}
         </div>
@@ -925,27 +952,15 @@ function SearchPage({ token }) {
             </div>
           </div>
         ) : (
-          <div
-            className={`result-panel ${
-              vehicle.status === 'WANTED' ? 'wanted-result' : 'clear-result'
-            }`}
-          >
-            <div className="result-symbol">
-              {vehicle.status === 'WANTED' ? '!' : 'OK'}
-            </div>
+          <div className="result-panel wanted-result">
+            <div className="result-symbol">!</div>
             <div className="result-content">
               <div className="result-heading">
                 <div>
                   <p className="kicker">MATCH FOUND</p>
                   <h3>{vehicle.vehicleNumber}</h3>
                 </div>
-                <span
-                  className={`status-label ${
-                    vehicle.status === 'WANTED' ? 'inactive' : 'active'
-                  }`}
-                >
-                  {vehicle.status}
-                </span>
+                <span className="status-label inactive">{vehicle.status}</span>
               </div>
               <div className="result-details">
                 <span>

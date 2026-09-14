@@ -72,11 +72,13 @@ export async function notifyDealer({ dealer, vehicle, agent, message }) {
       )}.`,
   );
 
-  if (connectedSockets) {
-    io.to(room).emit('new_alert', payload);
-    console.log(`[alert] Socket new_alert emitted to ${room}.`);
-    return 'socket';
-  }
+  // Socket.IO delivery is disabled. FCM is now the only active notification
+  // path, while this implementation remains available for future reactivation.
+  // if (connectedSockets) {
+  //   io.to(room).emit('new_alert', payload);
+  //   console.log(`[alert] Socket new_alert emitted to ${room}.`);
+  //   return 'socket';
+  // }
 
   try {
     const sent = await sendDealerPush({

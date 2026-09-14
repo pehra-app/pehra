@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+// import { Alert } from 'react-native';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import {
   getMessaging,
@@ -6,11 +6,11 @@ import {
   onMessage,
   registerDeviceForRemoteMessages,
 } from '@react-native-firebase/messaging';
-import { io } from 'socket.io-client';
+// import { io } from 'socket.io-client';
 import api from '../api/client';
-import { SOCKET_BASE_URL } from '../api/client';
+// import { SOCKET_BASE_URL } from '../api/client';
 
-let socket;
+// let socket;
 let configured = false;
 let unsubscribeMessage;
 
@@ -55,29 +55,31 @@ export async function startNotificationSession(accessToken) {
     if (body) await displayNotification(title, body, remoteMessage.data);
   });
 
-  socket = io(SOCKET_BASE_URL, {
-    auth: { token: accessToken },
-    transports: ['websocket'],
-  });
-  socket.on('connect', () => {
-    console.log(`[notifications] Socket connected: ${socket.id}`);
-  });
-  socket.on('connect_error', error => {
-    console.error(`[notifications] Socket connection failed: ${error.message}`);
-  });
-  socket.on('disconnect', reason => {
-    console.warn(`[notifications] Socket disconnected: ${reason}`);
-  });
-  socket.on('new_alert', alert => {
-    console.log('[notifications] Socket new_alert received:', alert);
-    Alert.alert('Wanted vehicle located', alert.message, [{ text: 'OK' }]);
-    displayNotification('Pehra: Wanted vehicle located', alert.message, alert);
-  });
+  // Socket.IO is intentionally disabled. FCM handles foreground and
+  // background notifications through onMessage and the root background handler.
+  // socket = io(SOCKET_BASE_URL, {
+  //   auth: { token: accessToken },
+  //   transports: ['websocket'],
+  // });
+  // socket.on('connect', () => {
+  //   console.log(`[notifications] Socket connected: ${socket.id}`);
+  // });
+  // socket.on('connect_error', error => {
+  //   console.error(`[notifications] Socket connection failed: ${error.message}`);
+  // });
+  // socket.on('disconnect', reason => {
+  //   console.warn(`[notifications] Socket disconnected: ${reason}`);
+  // });
+  // socket.on('new_alert', alert => {
+  //   console.log('[notifications] Socket new_alert received:', alert);
+  //   Alert.alert('Wanted vehicle located', alert.message, [{ text: 'OK' }]);
+  //   displayNotification('Pehra: Wanted vehicle located', alert.message, alert);
+  // });
 }
 
 export function stopNotificationSession() {
   unsubscribeMessage?.();
   unsubscribeMessage = null;
-  socket?.disconnect();
-  socket = null;
+  // socket?.disconnect();
+  // socket = null;
 }
