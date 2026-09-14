@@ -1,15 +1,17 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
 import AppButton from '../../components/AppButton';
 import { SkeletonList } from '../../components/Skeleton';
 import api from '../../api/client';
+import { downloadTablePdf } from '../../services/pdfExport';
 import { colors } from '../../theme/colors';
 
 export default function AgentDealersScreen({ navigation }) {
   const [dealers, setDealers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -28,24 +30,37 @@ export default function AgentDealersScreen({ navigation }) {
       load();
     }, [load]),
   );
-  const download = () =>
-    Share.share({
-      title: 'Pehra Dealer Records',
-      message: [
-        'Dealer Name,Email,Phone,Status',
-        ...dealers.map(
-          dealer =>
-            `"${dealer.name || ''}","${dealer.email || ''}","${
-              dealer.phone || ''
-            }","${dealer.isActive ? 'Active' : 'Inactive'}"`,
-        ),
-      ].join('\n'),
-    });
+  const download = async () => {
+    setExporting(true);
+    try {
+      await downloadTablePdf({
+        title: 'Dealer Records',
+        subtitle: 'Pehra dealer directory',
+        fileName: 'pehra-dealer-records',
+        columns: ['Dealer Name', 'Email', 'Phone', 'Status'],
+        rows: dealers.map(dealer => [
+          dealer.name,
+          dealer.email,
+          dealer.phone,
+          dealer.isActive ? 'Active' : 'Inactive',
+        ]),
+      });
+      Alert.alert('Download complete', 'The PDF was saved in Downloads/Pehra.');
+    } catch (error) {
+      Alert.alert(
+        'Export failed',
+        error.message || 'Could not create the PDF.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
   return (
     <Screen scroll={false}>
       <AppButton
         title="Download All"
         onPress={download}
+        loading={exporting}
         disabled={!dealers.length}
       />
       <FlatList
