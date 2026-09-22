@@ -35,6 +35,7 @@ local.properties
 google-services.json
 !debug.keystore
 .kotlin/
+key.properties
 
 # node.js
 #

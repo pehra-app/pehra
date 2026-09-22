@@ -8,3 +8,7 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# PDFBox Android references an optional JP2 decoder class in the release build.
+# R8 treats it as missing unless it is explicitly suppressed in release minification.
+-dontwarn com.gemalto.jp2.JP2Decoder
