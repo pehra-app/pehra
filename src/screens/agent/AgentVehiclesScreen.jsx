@@ -14,7 +14,7 @@ export default function AgentVehiclesScreen({ route, navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortBy, setSortBy] = useState('vehicleNumber');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,11 +39,7 @@ export default function AgentVehiclesScreen({ route, navigation }) {
     }, [load]),
   );
 
-  const getSortValue = item => {
-    if (sortBy === 'createdAt') return item.createdAt || '';
-    if (sortBy === 'dealer.name') return item.dealer?.name || '';
-    return item[sortBy] || item.customerName || '';
-  };
+  const getSortValue = item => item[sortBy] || item.customerName || '';
 
   const sortedVehicles = [...vehicles].sort((left, right) => {
     const valueA = String(getSortValue(left));
@@ -91,7 +87,11 @@ export default function AgentVehiclesScreen({ route, navigation }) {
   };
   return (
     <Screen scroll={false}>
-      <Text style={{ color: colors.muted, marginBottom: 10 }}>Sort by</Text>
+      <Text
+        style={{ color: colors.muted, marginBottom: 10, fontWeight: '700' }}
+      >
+        Sort by
+      </Text>
       <View
         style={{
           flexDirection: 'row',
@@ -101,10 +101,9 @@ export default function AgentVehiclesScreen({ route, navigation }) {
         }}
       >
         {[
-          ['createdAt', 'Newest'],
-          ['vehicleNumber', 'Vehicle'],
-          ['customerName', 'Customer'],
-          ['dealer.name', 'Dealer'],
+          ['vehicleNumber', 'Vehicle Number'],
+          ['chassisNumber', 'Chassis Number'],
+          ['engineNumber', 'Engine Number'],
         ].map(([key, label]) => (
           <AppButton
             key={key}
@@ -120,6 +119,7 @@ export default function AgentVehiclesScreen({ route, navigation }) {
         onPress={download}
         loading={exporting}
         disabled={!vehicles.length}
+        style={{ marginBottom: 12 }}
       />
       <FlatList
         style={{ marginTop: 14 }}

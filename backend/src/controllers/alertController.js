@@ -10,6 +10,26 @@ export async function listAlerts(req, res) {
   res.json(alerts);
 }
 
+export async function markAlertRead(req, res) {
+  const filter = { _id: req.params.id };
+  if (req.user.role === 'DEALER') filter.dealer = req.user._id;
+
+  const alert = await Alert.findOne(filter);
+  if (!alert) return res.status(404).json({ message: 'Alert not found.' });
+
+  alert.read = true;
+  await alert.save();
+  res.json(alert);
+}
+
+export async function markAllAlertsRead(req, res) {
+  const filter = req.user.role === 'DEALER' ? { dealer: req.user._id } : {};
+  const { read = true } = req.body || {};
+
+  const result = await Alert.updateMany(filter, { read });
+  res.json({ success: true, modifiedCount: result.modifiedCount ?? 0, read });
+}
+
 export async function deleteAlert(req, res) {
   const filter = { _id: req.params.id };
   if (req.user.role === 'DEALER') filter.dealer = req.user._id;

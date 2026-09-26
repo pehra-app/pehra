@@ -14,9 +14,22 @@ import { colors } from '../theme/colors';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+const headerOptions = {
+  headerBackTitleVisible: false,
+  headerStyle: {
+    backgroundColor: colors.primary,
+  },
+  headerTitleStyle: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  headerTintColor: '#FFFFFF',
+  headerTitleAlign: 'center',
+};
+
 function VehicleStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={headerOptions}>
       <Stack.Screen
         name="DealerVehicles"
         component={DealerVehiclesScreen}
@@ -42,6 +55,15 @@ export default function DealerNavigator() {
       screenOptions={({ route }) => ({
         tabBarActiveTintColor: colors.primary,
         headerShown: true,
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTitleStyle: {
+          color: '#FFFFFF',
+          fontWeight: '700',
+        },
+        headerTintColor: '#FFFFFF',
+        headerTitleAlign: 'center',
         tabBarIcon: ({ color, size }) => {
           const icons = {
             Home: 'home-outline',
@@ -66,7 +88,6 @@ export default function DealerNavigator() {
         component={VehicleStack}
         options={{ headerShown: false }}
       />
-      <Tab.Screen name="Alerts" component={AlertsScreen} />
       <Tab.Screen
         name="Wanted"
         component={DealerWantedCustomersScreen}

@@ -106,7 +106,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
 
   return (
     <Screen scroll={false}>
-      <Text style={{ color: colors.muted, marginBottom: 14 }}>
+      <Text style={styles.headerText}>
         Check this list before adding a new customer vehicle record.
       </Text>
       <AppInput
@@ -122,7 +122,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
         loading={exporting}
         disabled={!visibleVehicles.length}
         variant="secondary"
-        style={{ marginTop: 12 }}
+        style={{ marginTop: 12, marginBottom: 8 }}
       />
       <Text style={styles.sortLabel}>Sort by</Text>
       <View style={styles.sortRow}>
@@ -206,11 +206,18 @@ export default function DealerWantedCustomersScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   list: { marginTop: 14 },
+  headerText: {
+    color: colors.muted,
+    marginBottom: 14,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   sortLabel: {
     color: colors.text,
     fontSize: 13,
     fontWeight: '700',
     marginTop: 12,
+    marginBottom: 8,
   },
   sortRow: { flexDirection: 'row', gap: 8 },
   sortButton: {

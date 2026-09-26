@@ -11,9 +11,22 @@ import VehicleDetailScreen from '../screens/dealer/VehicleDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
+const headerOptions = {
+  headerBackTitleVisible: false,
+  headerStyle: {
+    backgroundColor: '#6D28D9',
+  },
+  headerTitleStyle: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  headerTintColor: '#FFFFFF',
+  headerTitleAlign: 'center',
+};
+
 export default function AgentNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={headerOptions}>
       <Stack.Screen
         name="AgentDashboard"
         component={AgentDashboardScreen}

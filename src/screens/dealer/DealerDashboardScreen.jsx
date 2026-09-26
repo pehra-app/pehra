@@ -1,11 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Screen from '../../components/Screen';
 import StatCard from '../../components/StatCard';
 import Skeleton from '../../components/Skeleton';
 import api from '../../api/client';
 import { colors } from '../../theme/colors';
+import { getUnreadAlertCount } from '../../utils/alertUtils';
 
 export default function DealerDashboardScreen({ navigation }) {
   const [stats, setStats] = useState({
@@ -15,16 +17,44 @@ export default function DealerDashboardScreen({ navigation }) {
     alerts: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [unreadAlertCount, setUnreadAlertCount] = useState(0);
+
+  const loadAlerts = useCallback(async () => {
+    try {
+      const { data } = await api.get('/alerts');
+      setUnreadAlertCount(getUnreadAlertCount(data));
+    } catch (error) {
+      setUnreadAlertCount(0);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      api
-        .get('/dealer/stats')
-        .then(r => setStats(r.data))
+      Promise.all([
+        api.get('/dealer/stats').then(r => setStats(r.data)),
+        loadAlerts(),
+      ])
         .catch(() => {})
         .finally(() => setLoading(false));
-    }, []),
+
+      navigation.setOptions({
+        headerRight: () => (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Alerts')}
+            style={styles.headerButton}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            {unreadAlertCount > 0 && (
+              <View style={styles.badgeWrap}>
+                <Text style={styles.badgeText}>{unreadAlertCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        ),
+      });
+    }, [loadAlerts, navigation, unreadAlertCount]),
   );
 
   return (
@@ -104,4 +134,28 @@ const styles = StyleSheet.create({
   },
   warningTitle: { color: colors.warning, fontSize: 18, fontWeight: '900' },
   warningText: { color: '#92400E', marginTop: 5 },
+  headerButton: {
+    position: 'relative',
+    marginRight: 14,
+    padding: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  badgeWrap: {
+    position: 'absolute',
+    right: -2,
+    top: -4,
+    backgroundColor: '#F43F5E',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
 });
