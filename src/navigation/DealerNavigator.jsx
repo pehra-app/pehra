@@ -49,6 +49,23 @@ function VehicleStack() {
   );
 }
 
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={headerOptions}>
+      <Stack.Screen
+        name="DealerDashboard"
+        component={DealerDashboardScreen}
+        options={{ title: 'Pehra' }}
+      />
+      <Stack.Screen
+        name="Alerts"
+        component={AlertsScreen}
+        options={{ title: 'Alerts' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function DealerNavigator() {
   return (
     <Tab.Navigator
@@ -68,7 +85,6 @@ export default function DealerNavigator() {
           const icons = {
             Home: 'home-outline',
             Vehicles: 'car-outline',
-            Alerts: 'notifications-outline',
             Wanted: 'warning-outline',
             Profile: 'person-outline',
           };
@@ -80,8 +96,8 @@ export default function DealerNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={DealerDashboardScreen}
-        options={{ title: 'Pehra' }}
+        component={HomeStack}
+        options={{ title: 'Pehra', headerShown: false }}
       />
       <Tab.Screen
         name="Vehicles"
