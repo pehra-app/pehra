@@ -27,12 +27,7 @@ function canModify(reqUser, vehicle) {
 
 export async function listVehicles(req, res) {
   const filter = {
-    // Clear and deleted vehicle records are intentionally excluded from the
-    // active vehicle workflow. The old filter is preserved for later use.
     status: 'WANTED',
-    // ...(req.user.role === 'ADMIN' && req.query.includeDeleted === 'true'
-    //   ? {}
-    //   : { status: { $ne: 'DELETED' } }),
     ...(req.user.role === 'DEALER' ? { dealer: req.user._id } : {}),
     ...(req.user.role === 'AGENT' && req.query.status
       ? { status: req.query.status }
@@ -48,7 +43,9 @@ export async function listVehicles(req, res) {
 }
 
 export async function listWantedCustomers(req, res) {
-  const vehicles = await Vehicle.find({ status: 'WANTED' })
+  const vehicles = await Vehicle.find({
+    status: { $in: ['WANTED', 'CLEAR'] },
+  })
     .populate('dealer', 'name email phone')
     .sort({ createdAt: -1 });
   res.json(vehicles);
@@ -59,7 +56,7 @@ export async function getVehicle(req, res) {
     'dealer',
     'name email phone',
   );
-  if (!vehicle || vehicle.status !== 'WANTED')
+  if (!vehicle || !['WANTED', 'CLEAR'].includes(vehicle.status))
     return res.status(404).json({ message: 'Vehicle not found.' });
 
   if (
@@ -107,16 +104,19 @@ export async function createVehicle(req, res) {
     dealerId,
   } = req.body;
 
-  if (
-    !customerName ||
-    !customerCnic ||
-    !vehicleNumber ||
-    !chassisNumber ||
-    !engineNumber
-  ) {
+  if (!customerName || !customerCnic) {
+    return res.status(400).json({
+      message: 'Customer name and CNIC are required.',
+    });
+  }
+
+  const hasVehicleIdentifier = Boolean(
+    vehicleNumber || chassisNumber || engineNumber,
+  );
+  if (!hasVehicleIdentifier) {
     return res.status(400).json({
       message:
-        'Customer name, CNIC, vehicle, chassis and engine numbers are required.',
+        'At least one of vehicle number, chassis number, or engine number is required.',
     });
   }
 
@@ -124,7 +124,7 @@ export async function createVehicle(req, res) {
     const wantedCustomer = await Vehicle.findOne({
       customerName: normalize(customerName),
       customerCnic: normalize(customerCnic),
-      status: 'WANTED',
+      status: { $in: ['WANTED', 'CLEAR'] },
     });
     if (wantedCustomer) {
       return res.status(409).json({
@@ -189,7 +189,7 @@ export async function updateVehicle(req, res) {
       _id: { $ne: vehicle._id },
       customerName,
       customerCnic,
-      status: 'WANTED',
+      status: { $in: ['WANTED', 'CLEAR'] },
     });
     if (wantedCustomer) {
       return res.status(409).json({
@@ -209,15 +209,15 @@ export async function updateVehicle(req, res) {
   if (req.body.engineNumber)
     vehicle.engineNumber = normalize(req.body.engineNumber);
   if (req.body.status) {
+    const allowedStatuses = ['WANTED', 'CLEAR', 'DELETED'];
     if (req.body.status === 'DELETED' && req.user.role !== 'ADMIN') {
       return res
         .status(403)
         .json({ message: 'Only admins can delete records.' });
     }
-    // vehicle.status = ['CLEAR', 'WANTED', 'DELETED'].includes(req.body.status)
-    //   ? req.body.status
-    //   : 'CLEAR';
-    vehicle.status = 'WANTED';
+    vehicle.status = allowedStatuses.includes(req.body.status)
+      ? req.body.status
+      : 'WANTED';
   }
   if (req.body.customerName !== undefined)
     vehicle.customerName = normalize(req.body.customerName);

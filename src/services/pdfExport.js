@@ -15,6 +15,51 @@ const escapeHtml = value =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+const normalizeLogoUri = uri => {
+  if (typeof uri !== 'string') {
+    return null;
+  }
+
+  const value = uri.trim();
+  if (!value || /(null|undefined)/i.test(value)) {
+    return null;
+  }
+
+  if (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('file://') ||
+    value.startsWith('content://') ||
+    value.startsWith('data:')
+  ) {
+    return value;
+  }
+
+  return null;
+};
+
+const getFallbackWatermarkSvg = () => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+      <circle cx="130" cy="130" r="118" fill="#e0edff" stroke="#1d4ed8" stroke-width="4"/>
+      <circle cx="130" cy="130" r="96" fill="#f8fbff" stroke="#1d4ed8" stroke-width="2"/>
+      <text x="130" y="152" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="700" fill="#1d4ed8">P</text>
+      <text x="130" y="206" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" letter-spacing="4" fill="#1d4ed8">PEHRA</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+};
+
+export const getPdfWatermarkMarkup = (providedLogoUri = logoUri) => {
+  const safeLogoUri =
+    normalizeLogoUri(providedLogoUri) || getFallbackWatermarkSvg();
+
+  return `<div class="watermark"><img src="${escapeHtml(
+    safeLogoUri,
+  )}" /></div>`;
+};
+
 export async function downloadTablePdf({
   title,
   subtitle,
@@ -44,13 +89,7 @@ export async function downloadTablePdf({
         </style>
       </head>
       <body>
-        ${
-          logoUri
-            ? `<div class="watermark"><img src="${escapeHtml(
-                logoUri,
-              )}" /></div>`
-            : ''
-        }
+        ${getPdfWatermarkMarkup()}
         <div class="header">
           <div class="brand">PEHRA VEHICLE NETWORK</div>
           <h1>${escapeHtml(title)}</h1>

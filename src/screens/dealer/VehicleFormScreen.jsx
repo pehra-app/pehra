@@ -88,16 +88,17 @@ export default function VehicleFormScreen({ route, navigation }) {
 
   const submit = async () => {
     if (customerBlocked) return;
-    if (
-      !form.customerName.trim() ||
-      !form.customerCnic.trim() ||
-      !form.vehicleNumber ||
-      !form.chassisNumber ||
-      !form.engineNumber
-    ) {
+    if (!form.customerName.trim() || !form.customerCnic.trim()) {
+      return Alert.alert('Required', 'Customer name and CNIC are required.');
+    }
+
+    const hasVehicleIdentifier = Boolean(
+      form.vehicleNumber || form.chassisNumber || form.engineNumber,
+    );
+    if (!hasVehicleIdentifier) {
       return Alert.alert(
         'Required',
-        'Customer name, CNIC, vehicle, chassis and engine numbers are required.',
+        'At least one of vehicle number, chassis number, or engine number is required.',
       );
     }
     try {

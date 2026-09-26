@@ -10,9 +10,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
 import AppInput from '../../components/AppInput';
+import AppButton from '../../components/AppButton';
 import StatusBadge from '../../components/StatusBadge';
 import { SkeletonList } from '../../components/Skeleton';
 import api from '../../api/client';
+import { downloadTablePdf } from '../../services/pdfExport';
 import { colors } from '../../theme/colors';
 
 export default function DealerWantedCustomersScreen({ navigation }) {
@@ -20,6 +22,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('vehicleNumber');
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,6 +43,43 @@ export default function DealerWantedCustomersScreen({ navigation }) {
       load();
     }, [load]),
   );
+
+  const download = async () => {
+    setExporting(true);
+    try {
+      await downloadTablePdf({
+        title: 'Wanted Customer Records',
+        subtitle: 'Customer and vehicle records',
+        fileName: 'pehra-wanted-customer-records',
+        columns: [
+          'Customer',
+          'CNIC',
+          'Vehicle',
+          'Chassis',
+          'Engine',
+          'Status',
+          'Dealer',
+        ],
+        rows: visibleVehicles.map(vehicle => [
+          vehicle.customerName,
+          vehicle.customerCnic,
+          vehicle.vehicleNumber,
+          vehicle.chassisNumber,
+          vehicle.engineNumber,
+          vehicle.status,
+          vehicle.dealer?.name || 'Unknown dealer',
+        ]),
+      });
+      Alert.alert('Download complete', 'The PDF was saved in Downloads/Pehra.');
+    } catch (error) {
+      Alert.alert(
+        'Export failed',
+        error.message || 'Could not create the PDF.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const visibleVehicles = useMemo(() => {
     const query = search.trim().toUpperCase();
@@ -75,6 +115,14 @@ export default function DealerWantedCustomersScreen({ navigation }) {
         value={search}
         onChangeText={setSearch}
         autoCapitalize="characters"
+      />
+      <AppButton
+        title="Download All"
+        onPress={download}
+        loading={exporting}
+        disabled={!visibleVehicles.length}
+        variant="secondary"
+        style={{ marginTop: 12 }}
       />
       <Text style={styles.sortLabel}>Sort by</Text>
       <View style={styles.sortRow}>

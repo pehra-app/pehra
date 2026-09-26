@@ -6,11 +6,13 @@ import VehicleCard from '../../components/VehicleCard';
 import AppButton from '../../components/AppButton';
 import { SkeletonList } from '../../components/Skeleton';
 import api from '../../api/client';
+import { downloadTablePdf } from '../../services/pdfExport';
 import { colors } from '../../theme/colors';
 
 export default function DealerVehiclesScreen({ navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,11 +35,56 @@ export default function DealerVehiclesScreen({ navigation }) {
     }, [load]),
   );
 
+  const download = async () => {
+    setExporting(true);
+    try {
+      await downloadTablePdf({
+        title: 'Dealer Vehicle Records',
+        subtitle: 'Wanted vehicle records',
+        fileName: 'pehra-dealer-vehicle-records',
+        columns: [
+          'Vehicle',
+          'Customer',
+          'CNIC',
+          'Chassis',
+          'Engine',
+          'Make / Model',
+          'Status',
+        ],
+        rows: vehicles.map(vehicle => [
+          vehicle.vehicleNumber,
+          vehicle.customerName,
+          vehicle.customerCnic,
+          vehicle.chassisNumber,
+          vehicle.engineNumber,
+          `${vehicle.make || ''} ${vehicle.model || ''}`.trim(),
+          vehicle.status,
+        ]),
+      });
+      Alert.alert('Download complete', 'The PDF was saved in Downloads/Pehra.');
+    } catch (error) {
+      Alert.alert(
+        'Export failed',
+        error.message || 'Could not create the PDF.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <Screen scroll={false}>
       <AppButton
         title="+ Add Vehicle"
         onPress={() => navigation.navigate('VehicleForm', { mode: 'create' })}
+      />
+      <AppButton
+        title="Download All"
+        onPress={download}
+        loading={exporting}
+        disabled={!vehicles.length}
+        variant="secondary"
+        style={{ marginTop: 12 }}
       />
       <FlatList
         style={{ marginTop: 14 }}

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Text } from 'react-native';
+import { Alert, FlatList, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
 import AppButton from '../../components/AppButton';
@@ -14,6 +14,7 @@ export default function AgentVehiclesScreen({ route, navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [sortBy, setSortBy] = useState('createdAt');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +39,18 @@ export default function AgentVehiclesScreen({ route, navigation }) {
     }, [load]),
   );
 
+  const getSortValue = item => {
+    if (sortBy === 'createdAt') return item.createdAt || '';
+    if (sortBy === 'dealer.name') return item.dealer?.name || '';
+    return item[sortBy] || item.customerName || '';
+  };
+
+  const sortedVehicles = [...vehicles].sort((left, right) => {
+    const valueA = String(getSortValue(left));
+    const valueB = String(getSortValue(right));
+    return valueA.localeCompare(valueB, undefined, { numeric: true });
+  });
+
   const download = async () => {
     setExporting(true);
     try {
@@ -55,7 +68,7 @@ export default function AgentVehiclesScreen({ route, navigation }) {
           'Status',
           'Dealer',
         ],
-        rows: vehicles.map(vehicle => [
+        rows: sortedVehicles.map(vehicle => [
           vehicle.vehicleNumber,
           vehicle.customerName,
           vehicle.customerCnic,
@@ -78,6 +91,30 @@ export default function AgentVehiclesScreen({ route, navigation }) {
   };
   return (
     <Screen scroll={false}>
+      <Text style={{ color: colors.muted, marginBottom: 10 }}>Sort by</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 8,
+          marginBottom: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        {[
+          ['createdAt', 'Newest'],
+          ['vehicleNumber', 'Vehicle'],
+          ['customerName', 'Customer'],
+          ['dealer.name', 'Dealer'],
+        ].map(([key, label]) => (
+          <AppButton
+            key={key}
+            title={label}
+            variant={sortBy === key ? 'primary' : 'secondary'}
+            onPress={() => setSortBy(key)}
+            style={{ flex: 1, minWidth: 110 }}
+          />
+        ))}
+      </View>
       <AppButton
         title="Download All"
         onPress={download}
@@ -87,7 +124,7 @@ export default function AgentVehiclesScreen({ route, navigation }) {
       <FlatList
         style={{ marginTop: 14 }}
         contentContainerStyle={{ gap: 10, paddingBottom: 30 }}
-        data={vehicles}
+        data={sortedVehicles}
         keyExtractor={item => item._id}
         renderItem={({ item }) => (
           <VehicleCard
