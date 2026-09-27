@@ -12,6 +12,9 @@ export default function AppButton({
 }) {
   const isSecondary = variant === 'secondary';
   const isDanger = variant === 'danger';
+  const isOrange = variant === 'orange';
+  const isLight = isSecondary || isOrange; // light backgrounds use dark text
+
   return (
     <Pressable
       onPress={onPress}
@@ -20,15 +23,22 @@ export default function AppButton({
         styles.button,
         isSecondary && styles.secondary,
         isDanger && styles.danger,
+        isOrange && styles.orange,
         (disabled || loading) && styles.disabled,
         pressed && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isSecondary ? colors.primary : '#fff'} />
+        <ActivityIndicator color={isLight ? colors.primary : '#fff'} />
       ) : (
-        <Text style={[styles.text, isSecondary && styles.secondaryText]}>
+        <Text
+          style={[
+            styles.text,
+            isSecondary && styles.secondaryText,
+            isOrange && styles.orangeText,
+          ]}
+        >
           {title}
         </Text>
       )}
@@ -47,8 +57,10 @@ const styles = StyleSheet.create({
   },
   secondary: { backgroundColor: '#E8EEFF' },
   danger: { backgroundColor: colors.danger },
+  orange: { backgroundColor: 'orange' },
   disabled: { opacity: 0.55 },
   pressed: { opacity: 0.88 },
   text: { color: '#fff', fontWeight: '700', fontSize: 16 },
   secondaryText: { color: colors.primary },
+  orangeText: { color: '#fff' },
 });

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
 import AppButton from '../../components/AppButton';
@@ -85,34 +85,64 @@ export default function AgentVehiclesScreen({ route, navigation }) {
       setExporting(false);
     }
   };
+
   return (
     <Screen scroll={false}>
       <Text
-        style={{ color: colors.muted, marginBottom: 10, fontWeight: '700' }}
+        style={{
+          color: '#111',
+          marginBottom: 10,
+          fontWeight: '700',
+          fontSize: 16,
+        }}
       >
         Sort by
       </Text>
       <View
         style={{
           flexDirection: 'row',
-          gap: 8,
+          gap: 6,
           marginBottom: 12,
-          flexWrap: 'wrap',
         }}
       >
         {[
           ['vehicleNumber', 'Vehicle Number'],
           ['chassisNumber', 'Chassis Number'],
           ['engineNumber', 'Engine Number'],
-        ].map(([key, label]) => (
-          <AppButton
-            key={key}
-            title={label}
-            variant={sortBy === key ? 'primary' : 'secondary'}
-            onPress={() => setSortBy(key)}
-            style={{ flex: 1, minWidth: 110 }}
-          />
-        ))}
+        ].map(([key, label]) => {
+          const active = sortBy === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => setSortBy(key)}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                paddingHorizontal: 4,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: active ? '#EDE4FF' : '#FFFFFF',
+                borderWidth: 1.5,
+                borderColor: active ? '#7C3AED' : '#E5E7EB',
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={{
+                  color: active ? '#7C3AED' : '#6B7280',
+                  fontWeight: '700',
+                  fontSize: 12,
+                  textAlign: 'center',
+                }}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
       <AppButton
         title="Download All"

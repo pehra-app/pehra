@@ -88,9 +88,9 @@ export default function VehicleFormScreen({ route, navigation }) {
 
   const submit = async () => {
     if (customerBlocked) return;
-    if (!form.customerName.trim() || !form.customerCnic.trim()) {
-      return Alert.alert('Required', 'Customer name and CNIC are required.');
-    }
+    // if (!form.customerName.trim() || !form.customerCnic.trim()) {
+    //   return Alert.alert('Required', 'Customer name and CNIC are required.');
+    // }
 
     const hasVehicleIdentifier = Boolean(
       form.vehicleNumber || form.chassisNumber || form.engineNumber,
@@ -107,6 +107,15 @@ export default function VehicleFormScreen({ route, navigation }) {
         ...form,
         year: form.year ? Number(form.year) : undefined,
       };
+
+      // Strip empty optional/identifier fields so the backend receives
+      // `undefined` (not `''`), which keeps `sparse: true` unique indexes working.
+      if (!payload.customerName) delete payload.customerName;
+      if (!payload.customerCnic) delete payload.customerCnic;
+      if (!payload.vehicleNumber) delete payload.vehicleNumber;
+      if (!payload.chassisNumber) delete payload.chassisNumber;
+      if (!payload.engineNumber) delete payload.engineNumber;
+
       if (vehicleId) await api.put(`/vehicles/${vehicleId}`, payload);
       else await api.post('/vehicles', payload);
       Alert.alert('Saved', 'Vehicle record saved.');
@@ -137,7 +146,11 @@ export default function VehicleFormScreen({ route, navigation }) {
   }
 
   return (
-    <Screen contentStyle={{ gap: 13 }}>
+    <Screen
+      contentStyle={{ gap: 13, paddingBottom: 140 }}
+      keyboardAvoiding
+      keyboardVerticalOffset={90}
+    >
       <Text style={styles.heading}>
         {vehicleId ? 'Edit vehicle' : 'New vehicle'}
       </Text>

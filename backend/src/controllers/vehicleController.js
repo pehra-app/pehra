@@ -104,11 +104,11 @@ export async function createVehicle(req, res) {
     dealerId,
   } = req.body;
 
-  if (!customerName || !customerCnic) {
-    return res.status(400).json({
-      message: 'Customer name and CNIC are required.',
-    });
-  }
+  // if (!customerName || !customerCnic) {
+  //   return res.status(400).json({
+  //     message: 'Customer name and CNIC are required.',
+  //   });
+  // }
 
   const hasVehicleIdentifier = Boolean(
     vehicleNumber || chassisNumber || engineNumber,
@@ -148,12 +148,9 @@ export async function createVehicle(req, res) {
     dealer = req.user._id;
   }
 
-  const vehicle = await Vehicle.create({
+  const payload = {
     customerName: normalize(customerName),
     customerCnic: normalize(customerCnic),
-    vehicleNumber: normalize(vehicleNumber),
-    chassisNumber: normalize(chassisNumber),
-    engineNumber: normalize(engineNumber),
     make,
     model,
     year,
@@ -162,7 +159,15 @@ export async function createVehicle(req, res) {
     status: 'WANTED',
     dealer,
     createdBy: req.user._id,
-  });
+  };
+
+  // Only attach identifiers when they actually have a value.
+  // This prevents saving empty strings, which would break `unique + sparse` indexes.
+  if (vehicleNumber) payload.vehicleNumber = normalize(vehicleNumber);
+  if (chassisNumber) payload.chassisNumber = normalize(chassisNumber);
+  if (engineNumber) payload.engineNumber = normalize(engineNumber);
+
+  const vehicle = await Vehicle.create(payload);
 
   res.status(201).json(vehicle);
 }

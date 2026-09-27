@@ -44,6 +44,29 @@ export default function DealerWantedCustomersScreen({ navigation }) {
     }, [load]),
   );
 
+  const visibleVehicles = useMemo(() => {
+    const query = search.trim().toUpperCase();
+    return vehicles
+      .filter(
+        vehicle =>
+          !query ||
+          [
+            vehicle.customerName,
+            vehicle.customerCnic,
+            vehicle.chassisNumber,
+            vehicle.engineNumber,
+            vehicle.vehicleNumber,
+          ].some(value =>
+            String(value || '')
+              .toUpperCase()
+              .includes(query),
+          ),
+      )
+      .sort((left, right) =>
+        String(left[sortBy] || '').localeCompare(String(right[sortBy] || '')),
+      );
+  }, [search, sortBy, vehicles]);
+
   const download = async () => {
     setExporting(true);
     try {
@@ -81,87 +104,63 @@ export default function DealerWantedCustomersScreen({ navigation }) {
     }
   };
 
-  const visibleVehicles = useMemo(() => {
-    const query = search.trim().toUpperCase();
-    return vehicles
-      .filter(
-        vehicle =>
-          !query ||
-          [
-            vehicle.customerName,
-            vehicle.customerCnic,
-            vehicle.chassisNumber,
-            vehicle.engineNumber,
-            vehicle.vehicleNumber,
-          ].some(value =>
-            String(value || '')
-              .toUpperCase()
-              .includes(query),
-          ),
-      )
-      .sort((left, right) =>
-        String(left[sortBy] || '').localeCompare(String(right[sortBy] || '')),
-      );
-  }, [search, sortBy, vehicles]);
-
   return (
-    <Screen scroll={false}>
-      <Text style={styles.headerText}>
-        Check this list before adding a new customer vehicle record.
-      </Text>
-      <AppInput
-        label="Search wanted customers and vehicles"
-        placeholder="Name, CNIC, chassis, engine or vehicle number"
-        value={search}
-        onChangeText={setSearch}
-        autoCapitalize="characters"
-      />
-      <AppButton
-        title="Download All"
-        onPress={download}
-        loading={exporting}
-        disabled={!visibleVehicles.length}
-        variant="secondary"
-        style={{ marginTop: 12, marginBottom: 8 }}
-      />
-      <Text style={styles.sortLabel}>Sort by</Text>
-      <View style={styles.sortRow}>
-        {[
-          ['vehicleNumber', 'Vehicle Number'],
-          ['chassisNumber', 'Chassis Number'],
-          ['engineNumber', 'Engine Number'],
-        ].map(([key, label]) => (
-          <Pressable
-            key={key}
-            onPress={() => setSortBy(key)}
-            style={[
-              styles.sortButton,
-              sortBy === key && styles.sortButtonActive,
-            ]}
-          >
-            <Text
-              style={[styles.sortText, sortBy === key && styles.sortTextActive]}
-            >
-              {label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+    <Screen scroll={false} noPadding>
       <FlatList
         style={styles.list}
-        contentContainerStyle={{ gap: 10, paddingBottom: 30 }}
+        contentContainerStyle={styles.listContent}
         data={visibleVehicles}
         keyExtractor={vehicle => vehicle._id}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <View style={{ gap: 10 }}>
+            <Text style={styles.headerText}>
+              Check this list before adding a new customer vehicle record.
+            </Text>
+            <AppInput
+              label="Search wanted customers and vehicles"
+              placeholder="Name, CNIC, chassis, engine or vehicle No"
+              value={search}
+              onChangeText={setSearch}
+              autoCapitalize="characters"
+            />
+            <AppButton
+              title="Download All"
+              onPress={download}
+              loading={exporting}
+              disabled={!visibleVehicles.length}
+              variant="secondary"
+            />
+            <Text style={styles.sortLabel}>Sort by</Text>
+            <View style={styles.sortRow}>
+              {[
+                ['vehicleNumber', 'Vehicle Number'],
+                ['chassisNumber', 'Chassis Number'],
+                ['engineNumber', 'Engine Number'],
+              ].map(([key, label]) => (
+                <Pressable
+                  key={key}
+                  onPress={() => setSortBy(key)}
+                  style={[
+                    styles.sortButton,
+                    sortBy === key && styles.sortButtonActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.sortText,
+                      sortBy === key && styles.sortTextActive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        }
         renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-            onPress={() =>
-              navigation.navigate('Vehicles', {
-                screen: 'VehicleDetail',
-                params: { vehicleId: item._id },
-              })
-            }
-          >
+          <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.customer}>
                 <Text style={styles.customerName}>
@@ -182,7 +181,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
             <Text style={styles.detail}>
               Year: {item.year || '-'} Color: {item.color || '-'}
             </Text>
-          </Pressable>
+          </View>
         )}
         ListEmptyComponent={
           loading ? (
@@ -205,10 +204,16 @@ export default function DealerWantedCustomersScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  list: { marginTop: 14 },
+  list: { flex: 1 },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16, // set to 0 if you want it flush with the tab bar
+    gap: 10,
+  },
   headerText: {
     color: colors.muted,
-    marginBottom: 14,
+    marginBottom: 4,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -216,8 +221,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 13,
     fontWeight: '700',
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 2,
+    marginBottom: 0,
   },
   sortRow: { flexDirection: 'row', gap: 8 },
   sortButton: {
