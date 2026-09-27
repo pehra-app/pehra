@@ -442,6 +442,14 @@ function VehicleForm({ token, vehicle, onSaved, onCancel }) {
         ...form,
         year: form.year ? Number(form.year) : undefined,
       };
+      if (!payload.customerName) delete payload.customerName;
+      if (!payload.customerCnic) delete payload.customerCnic;
+      if (!payload.vehicleNumber) delete payload.vehicleNumber;
+      if (!payload.chassisNumber) delete payload.chassisNumber;
+      if (!payload.engineNumber) delete payload.engineNumber;
+      if (!payload.make) delete payload.make;
+      if (!payload.model) delete payload.model;
+      if (!payload.color) delete payload.color;
       await request(
         vehicle?._id ? `/vehicles/${vehicle._id}` : '/vehicles',
         {

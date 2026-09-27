@@ -6,22 +6,16 @@ const vehicleSchema = new mongoose.Schema(
     customerCnic: { type: String, trim: true },
     vehicleNumber: {
       type: String,
-      unique: true,
-      sparse: true,
       uppercase: true,
       trim: true,
     },
     chassisNumber: {
       type: String,
-      unique: true,
-      sparse: true,
       uppercase: true,
       trim: true,
     },
     engineNumber: {
       type: String,
-      unique: true,
-      sparse: true,
       uppercase: true,
       trim: true,
     },
@@ -32,9 +26,11 @@ const vehicleSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['CLEAR', 'WANTED', 'DELETED'],
-      // default: 'CLEAR',
       default: 'WANTED',
     },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     dealer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -49,10 +45,41 @@ const vehicleSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// ✅ Partial unique indexes — ignore soft-deleted records (isDeleted: true)
+vehicleSchema.index(
+  { vehicleNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: false },
+    name: 'vehicleNumber_active_unique',
+  },
+);
+
+vehicleSchema.index(
+  { chassisNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: false },
+    name: 'chassisNumber_active_unique',
+  },
+);
+
+vehicleSchema.index(
+  { engineNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: false },
+    name: 'engineNumber_active_unique',
+  },
+);
+
 vehicleSchema.index({ customerCnic: 1, customerName: 1, status: 1 });
 
-// vehicleSchema.index({vehicleNumber: 1});
-// vehicleSchema.index({chassisNumber: 1});
-// vehicleSchema.index({engineNumber: 1});
+// ✅ Query middleware: hide deleted records unless includeDeleted is set
+vehicleSchema.pre(/^find/, async function () {
+  if (!this.getOptions().includeDeleted) {
+    this.where({ isDeleted: { $ne: true } });
+  }
+});
 
 export default mongoose.model('Vehicle', vehicleSchema);

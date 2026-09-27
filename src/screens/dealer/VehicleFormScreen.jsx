@@ -121,7 +121,7 @@ export default function VehicleFormScreen({ route, navigation }) {
       Alert.alert('Saved', 'Vehicle record saved.');
       navigation.goBack();
     } catch (e) {
-      if (e.response?.status === 409) setCustomerBlocked(true);
+      if (e.response?.data?.isCustomerBlocked) setCustomerBlocked(true);
       Alert.alert(
         'Error',
         e.response?.data?.message || 'Could not save vehicle.',

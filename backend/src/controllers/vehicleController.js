@@ -26,17 +26,17 @@ function canModify(reqUser, vehicle) {
 }
 
 export async function listVehicles(req, res) {
+  const includeDeleted = req.query.includeDeleted === 'true';
   const filter = {
-    status: 'WANTED',
-    ...(req.user.role === 'DEALER' ? { dealer: req.user._id } : {}),
-    ...(req.user.role === 'AGENT' && req.query.status
+    ...(req.query.status
       ? { status: req.query.status }
+      : req.user.role !== 'ADMIN'
+      ? { status: 'WANTED' }
       : {}),
-    ...(req.user.role === 'AGENT' && req.query.dealerId
-      ? { dealer: req.query.dealerId }
-      : {}),
+    ...(req.user.role === 'DEALER' ? { dealer: req.user._id } : {}),
+    ...(req.query.dealerId ? { dealer: req.query.dealerId } : {}),
   };
-  const vehicles = await Vehicle.find(filter)
+  const vehicles = await Vehicle.find(filter, null, { includeDeleted })
     .populate('dealer', 'name email phone')
     .sort({ createdAt: -1 });
   res.json(vehicles);
@@ -100,15 +100,8 @@ export async function createVehicle(req, res) {
     model,
     year,
     color,
-    // status = 'CLEAR',
     dealerId,
   } = req.body;
-
-  // if (!customerName || !customerCnic) {
-  //   return res.status(400).json({
-  //     message: 'Customer name and CNIC are required.',
-  //   });
-  // }
 
   const hasVehicleIdentifier = Boolean(
     vehicleNumber || chassisNumber || engineNumber,
@@ -120,7 +113,47 @@ export async function createVehicle(req, res) {
     });
   }
 
-  if (req.user.role === 'DEALER') {
+  const normVehicleNum = vehicleNumber ? normalize(vehicleNumber) : null;
+  const normChassisNum = chassisNumber ? normalize(chassisNumber) : null;
+  const normEngineNum = engineNumber ? normalize(engineNumber) : null;
+
+  if (normVehicleNum) {
+    const existing = await Vehicle.findOne({
+      vehicleNumber: normVehicleNum,
+    });
+    if (existing) {
+      return res.status(409).json({
+        message: `Vehicle number "${normVehicleNum}" is already registered.`,
+        field: 'vehicleNumber',
+      });
+    }
+  }
+
+  if (normChassisNum) {
+    const existing = await Vehicle.findOne({
+      chassisNumber: normChassisNum,
+    });
+    if (existing) {
+      return res.status(409).json({
+        message: `Chassis number "${normChassisNum}" is already registered.`,
+        field: 'chassisNumber',
+      });
+    }
+  }
+
+  if (normEngineNum) {
+    const existing = await Vehicle.findOne({
+      engineNumber: normEngineNum,
+    });
+    if (existing) {
+      return res.status(409).json({
+        message: `Engine number "${normEngineNum}" is already registered.`,
+        field: 'engineNumber',
+      });
+    }
+  }
+
+  if (req.user.role === 'DEALER' && customerName && customerCnic) {
     const wantedCustomer = await Vehicle.findOne({
       customerName: normalize(customerName),
       customerCnic: normalize(customerCnic),
@@ -129,6 +162,7 @@ export async function createVehicle(req, res) {
     if (wantedCustomer) {
       return res.status(409).json({
         message: 'This customer already has a wanted vehicle record.',
+        isCustomerBlocked: true,
       });
     }
   }
@@ -144,7 +178,6 @@ export async function createVehicle(req, res) {
       return res.status(400).json({ message: 'Valid Dealer is required.' });
     dealer = target._id;
   } else if (req.user.role === 'ADMIN' && !dealerId) {
-    // Sample behavior: admin-created record can be owned by admin, since Admin has full access.
     dealer = req.user._id;
   }
 
@@ -155,17 +188,15 @@ export async function createVehicle(req, res) {
     model,
     year,
     color,
-    // status: status === 'WANTED' ? 'WANTED' : 'CLEAR',
     status: 'WANTED',
+    isDeleted: false,
     dealer,
     createdBy: req.user._id,
   };
 
-  // Only attach identifiers when they actually have a value.
-  // This prevents saving empty strings, which would break `unique + sparse` indexes.
-  if (vehicleNumber) payload.vehicleNumber = normalize(vehicleNumber);
-  if (chassisNumber) payload.chassisNumber = normalize(chassisNumber);
-  if (engineNumber) payload.engineNumber = normalize(engineNumber);
+  if (normVehicleNum) payload.vehicleNumber = normVehicleNum;
+  if (normChassisNum) payload.chassisNumber = normChassisNum;
+  if (normEngineNum) payload.engineNumber = normEngineNum;
 
   const vehicle = await Vehicle.create(payload);
 
@@ -199,20 +230,61 @@ export async function updateVehicle(req, res) {
     if (wantedCustomer) {
       return res.status(409).json({
         message: 'This customer already has a wanted vehicle record.',
+        isCustomerBlocked: true,
       });
     }
+  }
+
+  if (req.body.vehicleNumber) {
+    const normVehicleNum = normalize(req.body.vehicleNumber);
+    const existing = await Vehicle.findOne({
+      _id: { $ne: vehicle._id },
+      vehicleNumber: normVehicleNum,
+    });
+    if (existing) {
+      return res.status(409).json({
+        message: `Vehicle number "${normVehicleNum}" is already registered.`,
+        field: 'vehicleNumber',
+      });
+    }
+    vehicle.vehicleNumber = normVehicleNum;
+  }
+
+  if (req.body.chassisNumber) {
+    const normChassisNum = normalize(req.body.chassisNumber);
+    const existing = await Vehicle.findOne({
+      _id: { $ne: vehicle._id },
+      chassisNumber: normChassisNum,
+    });
+    if (existing) {
+      return res.status(409).json({
+        message: `Chassis number "${normChassisNum}" is already registered.`,
+        field: 'chassisNumber',
+      });
+    }
+    vehicle.chassisNumber = normChassisNum;
+  }
+
+  if (req.body.engineNumber) {
+    const normEngineNum = normalize(req.body.engineNumber);
+    const existing = await Vehicle.findOne({
+      _id: { $ne: vehicle._id },
+      engineNumber: normEngineNum,
+    });
+    if (existing) {
+      return res.status(409).json({
+        message: `Engine number "${normEngineNum}" is already registered.`,
+        field: 'engineNumber',
+      });
+    }
+    vehicle.engineNumber = normEngineNum;
   }
 
   const fields = ['make', 'model', 'year', 'color'];
   fields.forEach(k => {
     if (req.body[k] !== undefined) vehicle[k] = req.body[k];
   });
-  if (req.body.vehicleNumber)
-    vehicle.vehicleNumber = normalize(req.body.vehicleNumber);
-  if (req.body.chassisNumber)
-    vehicle.chassisNumber = normalize(req.body.chassisNumber);
-  if (req.body.engineNumber)
-    vehicle.engineNumber = normalize(req.body.engineNumber);
+
   if (req.body.status) {
     const allowedStatuses = ['WANTED', 'CLEAR', 'DELETED'];
     if (req.body.status === 'DELETED' && req.user.role !== 'ADMIN') {
@@ -223,6 +295,11 @@ export async function updateVehicle(req, res) {
     vehicle.status = allowedStatuses.includes(req.body.status)
       ? req.body.status
       : 'WANTED';
+    if (vehicle.status === 'DELETED') {
+      vehicle.isDeleted = true;
+      vehicle.deletedAt = new Date();
+      vehicle.deletedBy = req.user._id;
+    }
   }
   if (req.body.customerName !== undefined)
     vehicle.customerName = normalize(req.body.customerName);
@@ -238,7 +315,11 @@ export async function deleteVehicle(req, res) {
   if (!vehicle) return res.status(404).json({ message: 'Vehicle not found.' });
   if (!canModify(req.user, vehicle))
     return res.status(403).json({ message: 'Not allowed.' });
+
+  vehicle.isDeleted = true;
   vehicle.status = 'DELETED';
+  vehicle.deletedAt = new Date();
+  vehicle.deletedBy = req.user._id;
   await vehicle.save();
   res.json({ message: 'Vehicle marked as deleted.' });
 }

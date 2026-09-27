@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed:admin": "node src/scripts/seedAdmin.js"
+    "seed:admin": "node src/scripts/seedAdmin.js",
+    "migrate:deleted": "node src/scripts/migrateDeletedVehicles.js"
   },
   "dependencies": {
     "bcryptjs": "latest",
