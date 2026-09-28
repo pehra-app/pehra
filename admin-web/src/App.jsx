@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './App.css';
 
 const API_BASE_URL =
@@ -209,6 +210,23 @@ function AccountsPage({ token }) {
     }
   }
 
+  async function deleteAccount(user) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${user.name}'s account (${user.role})? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await request(`/users/${user._id}`, { method: 'DELETE' }, token);
+      setMessage(`Account ${user.name} deleted.`);
+      loadUsers();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
   async function updatePassword(event) {
     event.preventDefault();
     setBusy(true);
@@ -376,6 +394,12 @@ function AccountsPage({ token }) {
                             }}
                           >
                             Reset password
+                          </button>
+                          <button
+                            className="text-button delete-action"
+                            onClick={() => deleteAccount(user)}
+                          >
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -670,36 +694,119 @@ function VehiclesPage({ token }) {
     return matchesStatus && matchesSearch;
   });
 
-  function exportVehicles() {
-    const rows = vehicles
-      .filter(vehicle => vehicle.status !== 'DELETED')
-      .map(vehicle => ({
-        Status: vehicle.status,
-        'Vehicle Number': vehicle.vehicleNumber,
-        'Customer Name': vehicle.customerName,
-        'Customer CNIC': vehicle.customerCnic,
-        Chassis: vehicle.chassisNumber,
-        Engine: vehicle.engineNumber,
-        Make: vehicle.make || '',
-        Model: vehicle.model || '',
-        Year: vehicle.year || '',
-        Color: vehicle.color || '',
-        Dealer: vehicle.dealer?.name || 'Admin',
-        'Dealer Email': vehicle.dealer?.email || '',
-        'Dealer Phone': vehicle.dealer?.phone || '',
-        'Created At': vehicle.createdAt
-          ? new Date(vehicle.createdAt).toLocaleString()
-          : '',
-        'Updated At': vehicle.updatedAt
-          ? new Date(vehicle.updatedAt).toLocaleString()
-          : '',
-      }));
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vehicles');
-    XLSX.writeFile(workbook, 'pehra-vehicle-registry.xlsx');
+  function exportVehiclesPdf() {
+    const activeVehicles = vehicles.filter(
+      vehicle => vehicle.status !== 'DELETED',
+    );
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    doc.setFillColor(29, 78, 216);
+    doc.rect(30, 24, doc.internal.pageSize.width - 60, 3, 'F');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(29, 78, 216);
+    doc.text('PEHRA VEHICLE NETWORK', 30, 42);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(23, 32, 51);
+    doc.text('Vehicle Registry', 30, 64);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.text(
+      `Vehicle records report | ${activeVehicles.length} record${
+        activeVehicles.length === 1 ? '' : 's'
+      }`,
+      30,
+      78,
+    );
+
+    const columns = [
+      'Status',
+      'Vehicle No',
+      'Customer Name',
+      'CNIC',
+      'Chassis Number',
+      'Engine Number',
+      'Make / Model',
+      'Dealer Name',
+      'Dealer Phone',
+    ];
+
+    const rows = activeVehicles.map(vehicle => [
+      vehicle.status || '',
+      vehicle.vehicleNumber || '',
+      vehicle.customerName || '',
+      vehicle.customerCnic || '',
+      vehicle.chassisNumber || '',
+      vehicle.engineNumber || '',
+      `${vehicle.make || ''} ${vehicle.model || ''}`.trim() || '-',
+      vehicle.dealer?.name || 'Admin',
+      vehicle.dealer?.phone || '-',
+    ]);
+
+    autoTable(doc, {
+      startY: 92,
+      head: [columns],
+      body: rows,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [29, 78, 216],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9,
+      },
+      bodyStyles: {
+        fontSize: 8.5,
+        textColor: [23, 32, 51],
+      },
+      alternateRowStyles: {
+        fillColor: [247, 249, 252],
+      },
+      margin: { top: 90, left: 30, right: 30, bottom: 40 },
+      didDrawPage: data => {
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({ opacity: 0.04 }));
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(110);
+        doc.setTextColor(29, 78, 216);
+        doc.text(
+          'PEHRA',
+          doc.internal.pageSize.width / 2,
+          doc.internal.pageSize.height / 2,
+          { align: 'center' },
+        );
+        doc.restoreGraphicsState();
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(107, 114, 128);
+        doc.text(
+          'Generated by Pehra • Confidential record',
+          30,
+          doc.internal.pageSize.height - 20,
+        );
+        doc.text(
+          `Page ${data.pageNumber} of ${doc.internal.getNumberOfPages()}`,
+          doc.internal.pageSize.width - 30,
+          doc.internal.pageSize.height - 20,
+          { align: 'right' },
+        );
+      },
+    });
+
+    doc.save('pehra-vehicle-registry.pdf');
     setMessage(
-      `Exported ${rows.length} vehicle record${rows.length === 1 ? '' : 's'}.`,
+      `Downloaded PDF for ${activeVehicles.length} vehicle record${
+        activeVehicles.length === 1 ? '' : 's'
+      }.`,
     );
   }
   if (editing)
@@ -737,9 +844,9 @@ function VehiclesPage({ token }) {
           <div className="table-tools">
             <button
               className="secondary-button compact"
-              onClick={exportVehicles}
+              onClick={exportVehiclesPdf}
             >
-              Export Excel
+              Download PDF
             </button>
             <input
               className="table-search"

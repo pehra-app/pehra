@@ -2,10 +2,13 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 
 export async function listUsers(req, res) {
-  const roleFilter =
-    req.user.role === 'AGENT' ? ['DEALER'] : ['DEALER', 'AGENT'];
+  const isAgent = req.user.role === 'AGENT';
+  const roleFilter = isAgent ? ['DEALER'] : ['DEALER', 'AGENT'];
+  const selectString = isAgent
+    ? '-passwordHash -fcmToken -email'
+    : '-passwordHash -fcmToken';
   const users = await User.find({ role: { $in: roleFilter } })
-    .select('-passwordHash -fcmToken')
+    .select(selectString)
     .sort({ createdAt: -1 });
   res.json(users);
 }
@@ -68,4 +71,14 @@ export async function resetPassword(req, res) {
   user.passwordHash = await bcrypt.hash(password, 12);
   await user.save();
   res.json({ message: 'Password reset.' });
+}
+
+export async function deleteUser(req, res) {
+  const user = await User.findOne({
+    _id: req.params.id,
+    role: { $in: ['DEALER', 'AGENT'] },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  await User.deleteOne({ _id: user._id });
+  res.json({ message: 'Account deleted successfully.' });
 }

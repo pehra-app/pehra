@@ -37,11 +37,10 @@ export default function AgentDealersScreen({ navigation }) {
         title: 'Dealer Records',
         subtitle: 'Pehra dealer directory',
         fileName: 'pehra-dealer-records',
-        columns: ['Dealer Name', 'Email', 'Phone', 'Status'],
+        columns: ['Dealer Name', 'Phone', 'Status'],
         rows: dealers.map(dealer => [
           dealer.name,
-          dealer.email,
-          dealer.phone,
+          dealer.phone || '-',
           dealer.isActive ? 'Active' : 'Inactive',
         ]),
       });
@@ -71,10 +70,9 @@ export default function AgentDealersScreen({ navigation }) {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.meta}>
-              {item.email}
-              {item.phone ? ` • ${item.phone}` : ''}
-            </Text>
+            {item.phone ? (
+              <Text style={styles.meta}>{item.phone}</Text>
+            ) : null}
             <AppButton
               title="View Records"
               variant="secondary"

@@ -639,6 +639,13 @@ td small {
 .row-actions .reset-action {
   color: var(--ink);
 }
+.row-actions .delete-action {
+  color: #af3f2c;
+}
+.row-actions .delete-action:hover {
+  border-color: #af3f2c;
+  background: #f9e5df;
+}
 .danger-button {
   margin-left: 12px;
   color: #af3f2c;

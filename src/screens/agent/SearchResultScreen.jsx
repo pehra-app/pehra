@@ -49,6 +49,7 @@ export default function SearchResultScreen({ route, navigation }) {
           value={`${vehicle.make || '-'} ${vehicle.model || ''}`.trim()}
         />
         <Row label="Dealer" value={vehicle.dealer?.name || '-'} />
+        <Row label="Phone No" value={vehicle.dealer?.phone || '-'} />
       </View>
       {wanted && (
         <Text style={styles.alertText}>
