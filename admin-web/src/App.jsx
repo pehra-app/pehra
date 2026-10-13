@@ -1111,6 +1111,13 @@ function Dashboard({ session, onLogout }) {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [view, setView] = useState('overview');
+  const today = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: '2-digit',
+  })
+    .format(new Date())
+    .toUpperCase();
 
   useEffect(() => {
     request('/admin/stats', {}, session.token)
@@ -1167,7 +1174,7 @@ function Dashboard({ session, onLogout }) {
       <main className="dashboard">
         <header className="topbar">
           <div>
-            <p className="kicker">WEDNESDAY, SEPTEMBER 09</p>
+            <p className="kicker">{today}</p>
             <h1>Good morning, {session.user.name.split(' ')[0]}.</h1>
           </div>
           <div className="avatar">
