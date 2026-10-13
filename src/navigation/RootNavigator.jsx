@@ -18,7 +18,9 @@ export default function RootNavigator() {
 
   if (!user) {
     return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{ headerShown: false, statusBarStyle: 'dark' }}
+      >
         <Stack.Screen name="Login" component={LoginScreen} />
       </Stack.Navigator>
     );

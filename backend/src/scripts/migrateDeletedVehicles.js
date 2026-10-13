@@ -5,17 +5,14 @@ import Vehicle from '../models/Vehicle.js';
 dotenv.config();
 
 async function migrate() {
-  const mongoUri =
-    process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pehra';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pehra';
   console.log(`Connecting to MongoDB at ${mongoUri}...`);
-  await mongoose.connect(mongoUri);
+  await mongoose.connect(mongoUri, { autoIndex: false });
 
   console.log('Migrating deleted vehicle records...');
-  const deletedVehicles = await Vehicle.find(
-    { status: 'DELETED' },
-    null,
-    { includeDeleted: true },
-  );
+  const deletedVehicles = await Vehicle.find({ status: 'DELETED' }, null, {
+    includeDeleted: true,
+  });
 
   let updatedCount = 0;
   for (const v of deletedVehicles) {
@@ -55,21 +52,27 @@ async function migrate() {
 
   console.log(`Migrated ${updatedCount} deleted vehicle record(s).`);
 
-  // 4. Safer than syncIndexes() — only creates, never drops
-  console.log('Ensuring partial unique indexes...');
-  await Vehicle.createIndexes();
-  console.log('Indexes ensured.');
-
-  // 5. Explicitly drop known legacy indexes (safe if already gone)
-  for (const name of ['vehicleNumber_1', 'chassisNumber_1', 'engineNumber_1']) {
+  // Replace old indexes so their partial filters exclude missing identifiers.
+  console.log('Replacing vehicle identifier indexes...');
+  for (const name of [
+    'vehicleNumber_active_unique',
+    'chassisNumber_active_unique',
+    'engineNumber_active_unique',
+    'vehicleNumber_1',
+    'chassisNumber_1',
+    'engineNumber_1',
+  ]) {
     try {
       await Vehicle.collection.dropIndex(name);
-      console.log(`Dropped legacy index: ${name}`);
+      console.log(`Dropped index: ${name}`);
     } catch (err) {
       if (err.codeName !== 'IndexNotFound') throw err;
       // silently ignore — already gone
     }
   }
+
+  await Vehicle.createIndexes();
+  console.log('Partial unique indexes ensured.');
 
   await mongoose.disconnect();
   console.log('Migration completed cleanly.');

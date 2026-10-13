@@ -119,7 +119,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
             </Text>
             <AppInput
               label="Search wanted customers and vehicles"
-              placeholder="Name, CNIC, chassis, engine or vehicle No"
+              placeholder="Name, CNIC, vehicle details..."
               value={search}
               onChangeText={setSearch}
               autoCapitalize="characters"

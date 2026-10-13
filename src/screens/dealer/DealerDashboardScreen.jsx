@@ -48,7 +48,9 @@ export default function DealerDashboardScreen({ navigation }) {
             <Ionicons name="notifications-outline" size={22} color="#fff" />
             {unreadAlertCount > 0 && (
               <View style={styles.badgeWrap}>
-                <Text style={styles.badgeText}>{unreadAlertCount}</Text>
+                <Text style={styles.badgeText}>
+                  {unreadAlertCount > 99 ? '99+' : unreadAlertCount}
+                </Text>
               </View>
             )}
           </Pressable>
@@ -143,19 +145,22 @@ const styles = StyleSheet.create({
   },
   badgeWrap: {
     position: 'absolute',
-    right: -2,
-    top: -4,
+    right: -5,
+    top: -5,
     backgroundColor: '#F43F5E',
-    minWidth: 18,
-    height: 18,
+    minWidth: 20,
+    height: 20,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 5,
   },
   badgeText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: '800',
+    lineHeight: 12,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
 });

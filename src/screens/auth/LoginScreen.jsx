@@ -30,7 +30,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen contentStyle={styles.page} keyboardAvoiding>
+    <Screen
+      contentStyle={styles.page}
+      keyboardAvoiding
+      safeAreaEdges={['top', 'right', 'bottom', 'left']}
+    >
       <View style={styles.hero}>
         <Image
           accessibilityLabel="Pehra"

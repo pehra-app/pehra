@@ -14,6 +14,7 @@ export default function Screen({
   scroll = true,
   contentStyle,
   keyboardAvoiding = false,
+  safeAreaEdges = ['left', 'right'],
 }) {
   const body = scroll ? (
     <ScrollView
@@ -27,7 +28,7 @@ export default function Screen({
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={safeAreaEdges} style={styles.safe}>
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

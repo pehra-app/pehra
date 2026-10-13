@@ -50,7 +50,10 @@ vehicleSchema.index(
   { vehicleNumber: 1 },
   {
     unique: true,
-    partialFilterExpression: { isDeleted: false },
+    partialFilterExpression: {
+      isDeleted: false,
+      vehicleNumber: { $type: 'string', $gt: '' },
+    },
     name: 'vehicleNumber_active_unique',
   },
 );
@@ -59,7 +62,10 @@ vehicleSchema.index(
   { chassisNumber: 1 },
   {
     unique: true,
-    partialFilterExpression: { isDeleted: false },
+    partialFilterExpression: {
+      isDeleted: false,
+      chassisNumber: { $type: 'string', $gt: '' },
+    },
     name: 'chassisNumber_active_unique',
   },
 );
@@ -68,7 +74,10 @@ vehicleSchema.index(
   { engineNumber: 1 },
   {
     unique: true,
-    partialFilterExpression: { isDeleted: false },
+    partialFilterExpression: {
+      isDeleted: false,
+      engineNumber: { $type: 'string', $gt: '' },
+    },
     name: 'engineNumber_active_unique',
   },
 );
