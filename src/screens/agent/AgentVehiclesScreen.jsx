@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../../components/Screen';
+import AppInput from '../../components/AppInput';
 import AppButton from '../../components/AppButton';
 import VehicleCard from '../../components/VehicleCard';
 import { SkeletonList } from '../../components/Skeleton';
@@ -9,11 +10,12 @@ import api from '../../api/client';
 import { downloadTablePdf } from '../../services/pdfExport';
 import { colors } from '../../theme/colors';
 
-export default function AgentVehiclesScreen({ route, navigation }) {
+export default function AgentVehiclesScreen({ route }) {
   const { status, dealerId, title = 'Vehicle Records' } = route.params || {};
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('vehicleNumber');
 
   const load = useCallback(async () => {
@@ -39,13 +41,32 @@ export default function AgentVehiclesScreen({ route, navigation }) {
     }, [load]),
   );
 
-  const getSortValue = item => item[sortBy] || item.customerName || '';
-
-  const sortedVehicles = [...vehicles].sort((left, right) => {
-    const valueA = String(getSortValue(left));
-    const valueB = String(getSortValue(right));
-    return valueA.localeCompare(valueB, undefined, { numeric: true });
-  });
+  const sortedVehicles = useMemo(() => {
+    const query = search.trim().toUpperCase();
+    return vehicles
+      .filter(
+        vehicle =>
+          !query ||
+          [
+            vehicle.vehicleNumber,
+            vehicle.customerName,
+            vehicle.customerCnic,
+            vehicle.chassisNumber,
+            vehicle.engineNumber,
+            vehicle.make,
+            vehicle.model,
+          ].some(value =>
+            String(value || '')
+              .toUpperCase()
+              .includes(query),
+          ),
+      )
+      .sort((left, right) => {
+        const valueA = String(left[sortBy] || left.customerName || '');
+        const valueB = String(right[sortBy] || right.customerName || '');
+        return valueA.localeCompare(valueB, undefined, { numeric: true });
+      });
+  }, [search, sortBy, vehicles]);
 
   const download = async () => {
     setExporting(true);
@@ -88,6 +109,13 @@ export default function AgentVehiclesScreen({ route, navigation }) {
 
   return (
     <Screen scroll={false}>
+      <AppInput
+        label="Search vehicle records"
+        placeholder="Vehicle, customer, CNIC, chassis, engine..."
+        value={search}
+        onChangeText={setSearch}
+        autoCapitalize="characters"
+      />
       <Text
         style={{
           color: '#111',
@@ -156,14 +184,10 @@ export default function AgentVehiclesScreen({ route, navigation }) {
         contentContainerStyle={{ gap: 10, paddingBottom: 30 }}
         data={sortedVehicles}
         keyExtractor={item => item._id}
-        renderItem={({ item }) => (
-          <VehicleCard
-            vehicle={item}
-            onPress={() =>
-              navigation.navigate('AgentVehicleDetail', { vehicleId: item._id })
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          // navigation.navigate('AgentVehicleDetail', { vehicleId: item._id });
+          return <VehicleCard vehicle={item} />;
+        }}
         ListEmptyComponent={
           loading ? (
             <SkeletonList count={4} />

@@ -13,7 +13,14 @@ export async function protect(req, res, next) {
 
     req.user = user;
     next();
-  } catch {
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        code: 'SESSION_EXPIRED',
+        message: 'Your session has expired. Please sign in again.',
+      });
+    }
+
     res.status(401).json({message: 'Invalid or expired session.'});
   }
 }

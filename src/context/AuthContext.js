@@ -3,8 +3,10 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/client';
 import {
@@ -17,6 +19,37 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
+  const sessionExpired = useRef(false);
+
+  useEffect(() => {
+    const interceptorId = api.interceptors.response.use(
+      response => response,
+      async error => {
+        if (
+          error.response?.data?.code === 'SESSION_EXPIRED' &&
+          !sessionExpired.current
+        ) {
+          sessionExpired.current = true;
+          try {
+            await Promise.all([
+              AsyncStorage.removeItem('pehra_token'),
+              AsyncStorage.removeItem('pehra_user'),
+            ]);
+          } catch (storageError) {
+            console.warn('Could not clear the expired session.', storageError);
+          }
+          setUser(null);
+          Alert.alert(
+            'Session expired',
+            'Your session has expired. Please sign in again.',
+          );
+        }
+        return Promise.reject(error);
+      },
+    );
+
+    return () => api.interceptors.response.eject(interceptorId);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -80,6 +113,7 @@ export function AuthProvider({ children }) {
         error,
       );
     }
+    sessionExpired.current = false;
     setUser(data.user);
   };
 

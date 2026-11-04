@@ -17,6 +17,8 @@ import api from '../../api/client';
 import { downloadTablePdf } from '../../services/pdfExport';
 import { colors } from '../../theme/colors';
 
+const getDisplayStatus = status => (status === 'DELETED' ? 'CLEAR' : status);
+
 export default function DealerWantedCustomersScreen({ navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
           vehicle.vehicleNumber,
           vehicle.chassisNumber,
           vehicle.engineNumber,
-          vehicle.status,
+          getDisplayStatus(vehicle.status),
           vehicle.dealer?.name || 'Unknown dealer',
         ]),
       });
@@ -170,7 +172,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
                   CNIC: {item.customerCnic || '-'}
                 </Text>
               </View>
-              <StatusBadge status={item.status} />
+              <StatusBadge status={getDisplayStatus(item.status)} />
             </View>
             <Text style={styles.vehicleNumber}>{item.vehicleNumber}</Text>
             <Text style={styles.meta}>

@@ -30,6 +30,7 @@ Base URL: `/api`
 - `POST /vehicles`
 - `PUT /vehicles/:id`
 - `DELETE /vehicles/:id`
+- `GET /vehicles/wanted-customers` — includes soft-deleted records, displayed as CLEAR in the dealer wanted-customer list
 - `GET /alerts`
 
 ## Agent

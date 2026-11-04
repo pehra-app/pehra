@@ -91,7 +91,7 @@ android {
         applicationId "com.pehra"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
+        versionCode 7
         versionName "1.0.0"
     }
     signingConfigs {
@@ -122,13 +122,14 @@ android {
         release {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }
 
 dependencies {
-    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.activity:activity-ktx:1.10.1")
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
