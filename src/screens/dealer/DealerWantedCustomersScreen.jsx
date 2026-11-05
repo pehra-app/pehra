@@ -17,8 +17,6 @@ import api from '../../api/client';
 import { downloadTablePdf } from '../../services/pdfExport';
 import { colors } from '../../theme/colors';
 
-const getDisplayStatus = status => (status === 'DELETED' ? 'CLEAR' : status);
-
 export default function DealerWantedCustomersScreen({ navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +89,7 @@ export default function DealerWantedCustomersScreen({ navigation }) {
           vehicle.vehicleNumber,
           vehicle.chassisNumber,
           vehicle.engineNumber,
-          getDisplayStatus(vehicle.status),
+          vehicle.status,
           vehicle.dealer?.name || 'Unknown dealer',
         ]),
       });
@@ -172,17 +170,30 @@ export default function DealerWantedCustomersScreen({ navigation }) {
                   CNIC: {item.customerCnic || '-'}
                 </Text>
               </View>
-              <StatusBadge status={getDisplayStatus(item.status)} />
+              <StatusBadge status={item.status} />
             </View>
-            <Text style={styles.vehicleNumber}>{item.vehicleNumber}</Text>
-            <Text style={styles.meta}>
-              {item.make || 'Vehicle'} {item.model || ''}
-            </Text>
-            <Text style={styles.detail}>Chassis: {item.chassisNumber}</Text>
-            <Text style={styles.detail}>Engine: {item.engineNumber}</Text>
-            <Text style={styles.detail}>
-              Year: {item.year || '-'} Color: {item.color || '-'}
-            </Text>
+            <View style={styles.recordContent}>
+              <View style={styles.vehicleInfo}>
+                <Text style={styles.vehicleNumber}>{item.vehicleNumber}</Text>
+                <Text style={styles.meta}>
+                  {item.make || 'Vehicle'} {item.model || ''}
+                </Text>
+                <Text style={styles.detail}>Chassis: {item.chassisNumber}</Text>
+                <Text style={styles.detail}>Engine: {item.engineNumber}</Text>
+                <Text style={styles.detail}>
+                  Year: {item.year || '-'} Color: {item.color || '-'}
+                </Text>
+              </View>
+              <View style={styles.dealerInfo}>
+                <Text style={styles.dealerLabel}>Added by</Text>
+                <Text style={styles.dealerName}>
+                  {item.dealer?.name || 'Unknown dealer'}
+                </Text>
+                <Text style={styles.dealerPhone}>
+                  {item.dealer?.phone || 'Phone unavailable'}
+                </Text>
+              </View>
+            </View>
           </View>
         )}
         ListEmptyComponent={
@@ -258,6 +269,21 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.9 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  recordContent: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  vehicleInfo: { flex: 1, gap: 6 },
+  dealerInfo: {
+    flexBasis: '38%',
+    alignItems: 'flex-end',
+    paddingTop: 4,
+  },
+  dealerLabel: { color: colors.muted, fontSize: 11, fontWeight: '700' },
+  dealerName: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  dealerPhone: { color: colors.muted, fontSize: 11, textAlign: 'right' },
   customer: { flex: 1 },
   customerName: { color: colors.text, fontSize: 18, fontWeight: '900' },
   cnic: { color: colors.danger, fontSize: 13, fontWeight: '700', marginTop: 4 },

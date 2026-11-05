@@ -43,13 +43,9 @@ export async function listVehicles(req, res) {
 }
 
 export async function listWantedCustomers(req, res) {
-  const vehicles = await Vehicle.find(
-    {
-      status: { $in: ['WANTED', 'CLEAR', 'DELETED'] },
-    },
-    null,
-    { includeDeleted: true },
-  )
+  const vehicles = await Vehicle.find({
+    status: { $in: ['WANTED', 'CLEAR'] },
+  })
     .populate('dealer', 'name email phone')
     .sort({ createdAt: -1 });
   res.json(vehicles);
